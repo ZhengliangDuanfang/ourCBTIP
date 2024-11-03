@@ -194,6 +194,14 @@ if __name__ == '__main__':
 
     # load the inter-view graph
     # 调用utils/hete_data_utils.py中的方法加载外层视角的互作用图数据集
+    # pos_adj_dict和neg_adj_dict是多层数组，第一层是三元组，
+    # 三元组的第一个和第三项可能是"drug"或"target"中的一个，
+    # 第二项则是药物互作用的类型；第二层是scipy.sparse.csc_matrix，
+    # 代表了这种三元组构成的图的邻接矩阵
+    # dd_dt_tt_triplets是多层数组，第一层是train/valid/test，第二层是pos/neg，
+    # 第三层是dd/dt/tt，且只有train+pos三种都有，其余仅有dd，最后才是三元组的list
+    # triplets中没有第三层，而是合并起来，其余与dd_dt_tt_triplets相同
+    # relation2id除了ddi的类型，还有'dt'和'tt'两种
     pos_adj_dict, neg_adj_dict, \
     triplets, dd_dt_tt_triplets, \
     drug2id, target2id, relation2id, \
@@ -218,7 +226,7 @@ if __name__ == '__main__':
 
     params.rel2id = train_pos_graph[1]
     params.num_rels = len(params.rel2id)
-    params.id2rel = {
+    params.id2rel = { # 没找到这个变量在哪里会用到
         v: train_pos_graph[0].to_canonical_etype(k) for k, v in params.rel2id.items()
     }
     train_pos_graph, train_neg_graph = train_pos_graph[0], train_neg_graph[0]

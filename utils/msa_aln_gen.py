@@ -4,7 +4,8 @@ import sys
 Usage: 
 sudo nohup python msa_aln_gen.py dataset_name >/dev/null 2>&1 &
 '''
-
+# 本文件是脚本性质的，负责完成HHblits比对、HHfilter过滤以及CCMpred的aln文件生成
+# IDEA: 需要调用HHblits与CCMpred的bin文件，目前尚未安装这两个软件
 
 def HHblitsMSA(bin_path, db_path, input_dir, output_dir):
     for fas_file in os.listdir(input_dir):

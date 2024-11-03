@@ -88,6 +88,8 @@ def build_molecule_graph(args_, graph_mode='bigraph', featurizer='afp'):
     # print(g.node_attr_schemes())
     n_node, n_edge = g.num_nodes(), g.num_edges()
     _tp = [torch.as_tensor(g.ndata[k].view(n_node, -1), dtype=torch.float32) for k in g.node_attr_schemes().keys()]
+    # g.node_attr_schemes().key()返回一个list，其中包含了g.ndata中的所有键，
+    # 类似于下文中的'nfeats'，不过这个时候g还没有'nfeats'键。
     # 这里.view函数是pytorch的函数，这里将张量的形状变换为(n_node, 自适应)
     g.ndata['nfeats'] = torch.cat(tuple(_tp), 1) # 将列表 _tp 中的所有张量沿第二维度拼接
     # 得到一个第一维度为n_node，第二维度为被拼接维度的二维张量
@@ -128,19 +130,20 @@ def seq_feature(pro_seq):
     pro_hot = np.zeros((len(pro_seq), len(pro_res_table)))
     pro_property = np.zeros((len(pro_seq), 12))
     for i in range(len(pro_seq)):
-        temp = one_of_k_encoding(pro_seq[i], pro_res_table)
+        temp = one_of_k_encoding(pro_seq[i], pro_res_table) # 生成独热码，相当于区分了氨基酸种类
         if temp != -1:
             pro_hot[i,] = temp
         else:
             return None
         # pro_hot[i,] = one_of_k_encoding_unk(pro_seq[i], pro_res_table)
-        pro_property[i,] = residue_features(pro_seq[i])
+        pro_property[i,] = residue_features(pro_seq[i]) # 每个氨基酸的性质
     return np.concatenate((pro_hot, pro_property), axis=1)
 
 
 def macro_mol_feature(aln, seq):
-    pssm = PSSM_calculation(aln, seq)
-    other_feature = seq_feature(seq)
+    pssm = PSSM_calculation(aln, seq) # 参见utils/mol_utils.py中的PSSM_calculation
+    # IDEA: 理解PSSM是什么，论文没提过
+    other_feature = seq_feature(seq) # 氨基酸特征
     if other_feature is None:
         return None
     return np.concatenate((np.transpose(pssm, (1, 0)), other_feature), axis=1)
@@ -159,22 +162,29 @@ def build_seq_to_graph(args):
     if not os.path.exists(aln_path) or not os.path.exists(cmap_path):
         print(mol_id, aln_path, cmap_path)
         return (-1, -1)
+    
+    # 根据cmap_path生成接触图
     macro_mol_edge_index = []
     contact_map = np.load(cmap_path, allow_pickle=True)
     contact_map += np.matrix(np.eye(contact_map.shape[0])) # 与单位矩阵叠加
     index_row, index_col = np.where(contact_map >= 0.5) # 返回大于0.5的元素的行列索引
+    # IDEA: 不采取0.5，而是其他阈值
     for i, j in zip(index_row, index_col):
         macro_mol_edge_index.append([i, j])
-    feat = macro_mol_to_feature(seq, aln_path) # 参见utils/mol_utils.py中的PSSM_calculation
+    g = dgl.graph((torch.from_numpy(index_row), torch.from_numpy(index_col))) # 获得的应该是接触图
+    # g = dgl.heterograph((index_row, index_col))
+    
+    # 根据氨基酸序列和aln_path生成序列特征
+    feat = macro_mol_to_feature(seq, aln_path) 
     if feat is None:
         return (-1, -1)
     mol_feature = torch.from_numpy(feat)
-    g = dgl.graph((torch.from_numpy(index_row), torch.from_numpy(index_col))) # 获得的应该是接触图
-    # g = dgl.heterograph((index_row, index_col))
+    
     print(g.num_nodes(), mol_feature.shape)
     print(mol_id)
     g.ndata['nfeats'] = torch.tensor(mol_feature, dtype=torch.float32)
     g.edata['efeats'] = torch.ones([g.num_edges(), 1], dtype=torch.float32)  # todo
+    # IDEA: 这里直接给每条边赋了一个长度为1的向量[1.]作为特征，应该是未完成
     datum = {
         'seq': seq,
         'mol_graph': g
@@ -203,8 +213,8 @@ def generate_small_mol_graph_datasets(params):
     # get node_feature_dimension and edge_feature_dimension
     _, g_datum = build_molecule_graph((seq_list[0][0], seq_list[0][1]))
     temp_g = g_datum['mol_graph']
-    node_feat_dim = temp_g.ndata['nfeats'].shape[1] # question: 不明白这两个feat_dim是做什么用途的
-    edge_feat_dim = temp_g.edata['efeats'].shape[1]
+    node_feat_dim = temp_g.ndata['nfeats'].shape[1] # 节点特征向量的长度
+    edge_feat_dim = temp_g.edata['efeats'].shape[1] # 边特征向量的长度
     logging.info(f'small molecule: node_feat_dim = {node_feat_dim}, edge_feat_dim = {edge_feat_dim}')
 
     for [_id, _val] in seq_list:
@@ -248,8 +258,8 @@ def generate_macro_mol_graph_datasets(params):
     init_folder(params)
     _, g_datum = build_seq_to_graph((seq_list[0][0], seq_list[0][1]))
     temp_g = g_datum['mol_graph']
-    node_feat_dim = temp_g.ndata['nfeats'].shape[1]
-    edge_feat_dim = temp_g.edata['efeats'].shape[1]
+    node_feat_dim = temp_g.ndata['nfeats'].shape[1] # 节点特征向量的长度
+    edge_feat_dim = temp_g.edata['efeats'].shape[1] # 边特征向量的长度
     logging.info(f'macro molecule: node_feat_dim = {node_feat_dim}, edge_feat_dim = {edge_feat_dim}')
 
     for _id, _val in seq_list:

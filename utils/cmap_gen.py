@@ -7,7 +7,7 @@ import sys
 Usage: 
 nohup python3 cmap_gen.py dataset_name  gpu_idx >/dev/null 2>&1 &
 '''
-
+# 本文件是脚本性质的，负责完成pconsc4的cmap文件生成
 
 def pconsc4Prediction(dataset):
     pre_path = "/data/drugbank_prot/data/"

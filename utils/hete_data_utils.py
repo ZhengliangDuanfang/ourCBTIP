@@ -7,14 +7,14 @@ from scipy.sparse import csc_matrix
 # triplets和dd_dt_tt_triplets两个dictionary的区别在于前者仅区分dd、dt和tt，后者还区分了small和macro
 def dd_dt_tt_build_inter_graph_from_links(dataset, split, saved_relation2id=None):
     _pre = '../baselines/data/'
-    files = { # question: 这些文件是在哪里生成的？
+    files = { # 这些文件在utils/sample_neg_split.py中生成
         'train': {
             'pos': f'{_pre}{dataset}{split}/train_pos.txt',
             'neg': f'{_pre}{dataset}{split}/train_neg.txt'
         },
         'valid': {
             'pos': f'{_pre}{dataset}{split}/valid_pos.txt',
-            'neg': f'{_pre}{dataset}{split}/train_neg.txt'
+            'neg': f'{_pre}{dataset}{split}/train_neg.txt' # IDEA: 这里可能应该是valid_neg.txt
         },
         'test': {
             'pos': f'{_pre}{dataset}{split}/test_pos.txt',
@@ -203,7 +203,8 @@ def dd_dt_tt_build_inter_graph_from_links(dataset, split, saved_relation2id=None
     for _set in ['pos', 'neg']:
         _dict[_set] = {}
         for i in range(len(relation2id)):
-            idx = np.argwhere(triplets['train'][_set][:, 2] == i) # 所有rid==i的三元组的索引（坐标）构成的ndarray
+            idx = np.argwhere(triplets['train'][_set][:, 2] == i) 
+            # idx为所有rid==i的三元组的索引（坐标）构成的ndarray
             rel = id2relation[i]
 
             rel_tuple = (
@@ -220,8 +221,10 @@ def dd_dt_tt_build_inter_graph_from_links(dataset, split, saved_relation2id=None
                 (
                     np.ones(len(idx), dtype=np.uint8),
                     (
-                        triplets['train'][_set][:, 0][idx].squeeze(1), # 这里应该是uid
-                        triplets['train'][_set][:, 1][idx].squeeze(1) # 这里应该是vid
+                        triplets['train'][_set][:, 0][idx].squeeze(1), 
+                        # rid==i的三元组的uid的list
+                        triplets['train'][_set][:, 1][idx].squeeze(1) 
+                        # rid==i的三元组的vid的list
                     )
                 ), shape=shape)
     print(f'drug_cnt: {drug_cnt}, (including {small_cnt} small ones); target_cnt: {target_cnt}')
@@ -364,7 +367,7 @@ def dd_build_inter_graph_from_links(dataset, split, saved_relation2id=None):
            id2drug, id2relation, \
            drug_cnt, small_cnt
 
-
+# 没有用到
 def ddssp_multigraph_to_dgl(drug_cnt, adjs, relation2id):
     adjs = {k: v.tocoo() for k, v in adjs.items()}
     graph_dict = {}
@@ -387,12 +390,12 @@ def ssp_multigraph_to_dgl(drug_cnt, target_cnt, adjs, relation2id):
     graph_dict = {}
     for k, v in adjs.items(): # k是rel_tuple三元组，v是csc_matrix矩阵
         # print(k, v)
-        if k[0] != k[2]: # 'dt' 
+        if k[0] != k[2]: # "drug"-"target"
             graph_dict[k] = (torch.from_numpy(v.row), torch.from_numpy(v.col)) 
             # v.row与v.col分别是矩阵中非零元素的行和列坐标列表
             graph_dict[(k[2], f"~{k[1]}", k[0])] = (torch.from_numpy(v.col), torch.from_numpy(v.row))
             relation2id[f"~{k[1]}"] = len(relation2id) # 给反向关系分配id
-        else:
+        else: # "drug"-"drug"或"target"-"target"
             # graph_dict[k] = (torch.from_numpy(np.hstack((v.row, v.col))),
             #                  torch.from_numpy(np.hstack((v.col, v.row))))
             graph_dict[k] = (torch.from_numpy(v.row),
