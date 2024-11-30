@@ -29,7 +29,7 @@ def dd_dt_tt_build_inter_graph_from_links(dataset, split, saved_relation2id=None
 
     biodrug_set = set(pd.read_csv(f'data/{dataset}/biotech_seqs.csv', header=None).iloc[:, 0]) \
         if dataset == 'full' else set() # 仅选择第一列，即药物名称
-        # question: 这里不应该是'CB-DB'吗
+        # IDEA: 这里不应该是'CB-DB'吗
 
     # dd_types
     # ub,vd,vb

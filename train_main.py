@@ -33,7 +33,7 @@ def train(encoder, decoder_intra, decoder_inter, dgi_model,
     opt.zero_grad()
     emb_intra, emb_inter = encoder(mol_graphs,
                                    train_pos_graph)
-    dgi_loss = dgi_model(emb_intra, emb_inter, # question: dgi_model 是干啥的？
+    dgi_loss = dgi_model(emb_intra, emb_inter,
                          train_pos_graph, train_neg_graph)
     emb_intra_prot = emb_intra['target']
     if emb_intra['bio'] is not None:
@@ -58,7 +58,7 @@ def train(encoder, decoder_intra, decoder_inter, dgi_model,
     if epo_no < epo_num_with_fp:
         emb_intra_in1, emb_intra_in2 = emb_intra[intra_pairs['in'][0]], emb_intra[intra_pairs['in'][1]]
         emb_intra_bt2 = emb_intra[intra_pairs['bt'][1]]
-        diff_loss = loss_fn['FP_INTRA'](emb_intra_in1, emb_intra_in2, emb_intra_bt2) # question: 实现了吗
+        diff_loss = loss_fn['FP_INTRA'](emb_intra_in1, emb_intra_in2, emb_intra_bt2) # IDEA: 实现loss_fn['FP_INTRA']
                     # + loss_fn['FP_INTRA'](prot_emb_intra_in1, prot_emb_intra_in2, prot_emb_intra_bt2)
         print("back:", BCEloss.item(), KLloss.item(), dgi_loss.item(), diff_loss.item())
         curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss + params.theta_loss * diff_loss
@@ -285,6 +285,7 @@ if __name__ == '__main__':
         # 从model/customized_opt.py中导入优化器初始化方法
         opt = build_optimizer(encoder, decoder_intra, decoder_inter, ff_contra_net, params)
         # 从model/customized_loss.py中导入损失函数初始化方法
+        # IDEA: 了解ff_contra_net的作用
         loss_fn = select_loss_function(params.loss)  # a loss dict 'loss name': (weight, loss_fuction)
         best_auc = 0.
         best_epoch = -1
@@ -301,9 +302,11 @@ if __name__ == '__main__':
         ).to(params.device)
         cnt_trival = 0
         # load_fp_contrastive_pairs函数的实现见本文件上方
+        # IDEA: 在调用这个函数之前是不是应该先保存一下npy文件，似乎没见到这个函数里面的文件是再哪里写的
+        # 补充: intra_pairs后面用于计算diff_loss，实际上目前没有完全实现
         intra_pairs = load_fp_contrastive_pairs(params.dataset, params.split)
         for epoch in range(1, params.max_epoch + 1):
-            emb_intra, emb_inter = train(encoder, decoder_intra, decoder_inter, dgi_model,
+            emb_intra, emb_inter = train(encoder, decoder_intra, decoder_inter, dgi_model, # IDEA: 此处dgi_model应改为ff_contra_net
                                          opt, loss_fn,
                                          mol_graphs,
                                          train_pos_graph, train_neg_graph,
