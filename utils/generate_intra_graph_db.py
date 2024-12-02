@@ -241,7 +241,7 @@ def generate_macro_mol_graph_datasets(params):
     dbname = 'macro_mol'
     logging.info(f"Construct intra-view graphs for macro molecules in {params.dataset}...")
     seq_list = pd.read_csv(f'data/{params.dataset}/target_seqs.csv', header=None).values.tolist()
-    if params.dataset == 'cb-db':
+    if params.dataset == 'CB-DB':
         seq_list += pd.read_csv(f'data/{params.dataset}/biotech_seqs.csv', header=None).values.tolist()
 
     # todo: fix map_size

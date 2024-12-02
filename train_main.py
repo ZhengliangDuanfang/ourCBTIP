@@ -4,6 +4,7 @@ import time
 
 import pandas as pd
 import torch
+import numpy as np
 from sklearn import metrics
 from model import build_optimizer
 from model.customized_loss import select_loss_function
@@ -55,16 +56,21 @@ def train(encoder, decoder_intra, decoder_inter, dgi_model,
     BCEloss = torch.mean(loss_fn['ERROR'](score_inter, labels)) # 见 model/customized_loss.py 
     BCEloss += params.alpha_loss * torch.mean(loss_fn['ERROR'](score_intra, labels))
     KLloss = torch.mean(loss_fn['DIFF'](score_intra, score_inter))
-    if epo_no < epo_num_with_fp:
-        emb_intra_in1, emb_intra_in2 = emb_intra[intra_pairs['in'][0]], emb_intra[intra_pairs['in'][1]]
-        emb_intra_bt2 = emb_intra[intra_pairs['bt'][1]]
-        diff_loss = loss_fn['FP_INTRA'](emb_intra_in1, emb_intra_in2, emb_intra_bt2) # IDEA: 实现loss_fn['FP_INTRA']
-                    # + loss_fn['FP_INTRA'](prot_emb_intra_in1, prot_emb_intra_in2, prot_emb_intra_bt2)
-        print("back:", BCEloss.item(), KLloss.item(), dgi_loss.item(), diff_loss.item())
-        curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss + params.theta_loss * diff_loss
-    else:
-        print("back:", BCEloss.item(), KLloss.item(), dgi_loss.item())
-        curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss
+    # 实现diff_loss后再取消注释
+    # if epo_no < epo_num_with_fp:
+    #     emb_intra_in1, emb_intra_in2 = emb_intra[intra_pairs['in'][0]], emb_intra[intra_pairs['in'][1]]
+    #     emb_intra_bt2 = emb_intra[intra_pairs['bt'][1]]
+    #     diff_loss = loss_fn['FP_INTRA'](emb_intra_in1, emb_intra_in2, emb_intra_bt2) # IDEA: 实现loss_fn['FP_INTRA']
+    #                 # + loss_fn['FP_INTRA'](prot_emb_intra_in1, prot_emb_intra_in2, prot_emb_intra_bt2)
+    #     print("back:", BCEloss.item(), KLloss.item(), dgi_loss.item(), diff_loss.item())
+    #     curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss + params.theta_loss * diff_loss
+    # else:
+    #     print("back:", BCEloss.item(), KLloss.item(), dgi_loss.item())
+    #     curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss
+    # 实现diff_loss后删除下面2行
+    print("back:", BCEloss.item(), KLloss.item(), dgi_loss.item())
+    curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss
+
     curr_loss.backward()
 
     opt.step()
@@ -155,17 +161,23 @@ if __name__ == '__main__':
     params = parser.parse_args()
     print(params)
 
+    if not os.path.isdir('results'):
+        os.mkdir('results')
+    if not os.path.isdir('trained_models'):
+        os.mkdir('trained_models')
+
     time_str = time.strftime('%m-%d_%H_%M', time.localtime(time.time()))
 
-    params.aln_path = '/data/rzy/drugbank_prot/full_drugbank/aln'
-    params.npy_path = '/data/rzy/drugbank_prot/full_drugbank/pconsc4'
+    # IDEA: generate_macro_mol_graph_datasets实现后取消注释
+    # params.aln_path = '/data/rzy/drugbank_prot/full_drugbank/aln'
+    # params.npy_path = '/data/rzy/drugbank_prot/full_drugbank/pconsc4'
 
-    if params.dataset == 'cb-db':
-        params.small_mol_db_path = f'/data/rzy/drugbank_prot/{params.dataset}/smile_graph_db_{params.SMILES_featurizer}'
-        params.macro_mol_db_path = f'/data/rzy/drugbank_prot/{params.dataset}/prot_graph_db'  # _{params.prot_featurizer}
-    elif params.dataset == 'c-db':
-        params.small_mol_db_path = f'/data/rzy/deep/smile_graph_db_{params.SMILES_featurizer}'
-        params.macro_mol_db_path = f'/data/rzy/deep/prot_graph_db'  # _{params.prot_featurizer}
+    if params.dataset == 'CB-DB':
+        params.small_mol_db_path = f'./data/{params.dataset}/lmdb_files/smile_graph_db_{params.SMILES_featurizer}'
+        params.macro_mol_db_path = f'./data/{params.dataset}/lmdb_files/prot_graph_db'
+    # elif params.dataset == 'C-DB':
+    #     params.small_mol_db_path = f'/data/rzy/deep/smile_graph_db_{params.SMILES_featurizer}'
+    #     params.macro_mol_db_path = f'/data/rzy/deep/prot_graph_db'  # _{params.prot_featurizer}
     else:
         raise NotImplementedError
 
@@ -175,8 +187,10 @@ if __name__ == '__main__':
     # if not processed, build intra-view graphs
     # 如果对应路径没有这些数据，调用utils/generate_intra_graph_db.py中的方法生成小分子和蛋白质的内部图数据集
     if not os.path.isdir(params.small_mol_db_path):
+        print("small molcule db_path not exist")
         generate_small_mol_graph_datasets(params)
     if not os.path.isdir(params.macro_mol_db_path):
+        print("macro molcule db_path not exist")
         generate_macro_mol_graph_datasets(params)
 
     # load intra-view graph dataset
@@ -240,6 +254,7 @@ if __name__ == '__main__':
         train_neg_graph = train_neg_graph.to(params.device)
     else:
         params.device = torch.device('cpu')
+    print(f"Training device is {torch.cuda.current_device()}")
 
     params.intra_enc1 = 'afp'
     params.intra_enc2 = 'afp'  # 'rnn'
@@ -285,7 +300,6 @@ if __name__ == '__main__':
         # 从model/customized_opt.py中导入优化器初始化方法
         opt = build_optimizer(encoder, decoder_intra, decoder_inter, ff_contra_net, params)
         # 从model/customized_loss.py中导入损失函数初始化方法
-        # IDEA: 了解ff_contra_net的作用
         loss_fn = select_loss_function(params.loss)  # a loss dict 'loss name': (weight, loss_fuction)
         best_auc = 0.
         best_epoch = -1
@@ -304,15 +318,19 @@ if __name__ == '__main__':
         # load_fp_contrastive_pairs函数的实现见本文件上方
         # IDEA: 在调用这个函数之前是不是应该先保存一下npy文件，似乎没见到这个函数里面的文件是再哪里写的
         # 补充: intra_pairs后面用于计算diff_loss，实际上目前没有完全实现
-        intra_pairs = load_fp_contrastive_pairs(params.dataset, params.split)
-        for epoch in range(1, params.max_epoch + 1):
-            emb_intra, emb_inter = train(encoder, decoder_intra, decoder_inter, dgi_model, # IDEA: 此处dgi_model应改为ff_contra_net
+        # 实现diff_loss后再取消注释
+        # intra_pairs = load_fp_contrastive_pairs(params.dataset, params.split)
+        print("Train Begin")
+        # for epoch in range(1, params.max_epoch + 1): # 调试结束后取消本行注释
+        for epoch in range(1, 3): # 测试结束后删除本行
+            emb_intra, emb_inter = train(encoder, decoder_intra, decoder_inter, ff_contra_net, # DONE: 此处dgi_model应改为ff_contra_net
                                          opt, loss_fn,
                                          mol_graphs,
                                          train_pos_graph, train_neg_graph,
                                          f'09_loss_{result_file_name}',
                                          epoch,
-                                         intra_pairs,
+                                         0, # 实现diff_loss后应删除
+                                        #  intra_pairs, # 实现diff_loss后再取消注释
                                          epo_num_with_fp=20)
             print('predicting for valid data')
 
@@ -351,10 +369,12 @@ if __name__ == '__main__':
                     print('Stop training due to more than 20 epochs with no improvement')
                     break
     
-    encoder.load_state_dict(torch.load(f'trained_models/encoder_{model_file_name}'))
-    decoder_inter.load_state_dict(torch.load(f'trained_models/interdec_{model_file_name}'))
+    # 目前可以成功运行到这里
+    # IDEA: 以下三行load_state_dict作用不明
+    # encoder.load_state_dict(torch.load(f'trained_models/encoder_{model_file_name}'))
+    # decoder_inter.load_state_dict(torch.load(f'trained_models/interdec_{model_file_name}'))
 
-    decoder_intra.load_state_dict(torch.load(f'trained_models/intradec_{model_file_name}'))
+    # decoder_intra.load_state_dict(torch.load(f'trained_models/intradec_{model_file_name}'))
     emb_intra, emb_inter = encoder(mol_graphs, train_pos_graph)
 
     if emb_intra['bio'] is not None:
@@ -402,5 +422,3 @@ if __name__ == '__main__':
             f'{tot_ap / total_len},'
             f'{tot_f1 / total_len}\n'
         )
-
-# python train_main.py -d deep -sp 415-2 --gpu 2 --beta_loss 0.3 --gamma_loss 0.001 --alpha_loss 1 -lr 0.001 --max_epoch 500

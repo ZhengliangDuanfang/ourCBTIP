@@ -1,4 +1,9 @@
 /data/C-DB/
 /data/CB-DB/
 
+results/
+trained_models/
+
 __pycache__/
+.idea/
+.vscode/

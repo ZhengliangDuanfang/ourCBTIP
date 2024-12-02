@@ -129,22 +129,26 @@ def process_files(files, saved_relation2id=None):
 #         f.write(f'{h},{r},{t}\n')
 
 
-def random_split(path, rate):
+def random_split(path, dataset, split):
     import random
-    with open('all_pos_deep_ddi.csv', 'r') as f:
+
+    split_sum = sum(split)
+    rate = [split[i] / split_sum for i in range(3)]
+
+    with open(f'{path}{dataset}/ddi_pos.csv', 'r') as f:
         pos = [line.split(',') for line in f.read().split('\n')[:-1]]
     random.shuffle(pos)
     pos = pd.DataFrame(pos, index=None)
     sp1, sp2 = int(rate[0] * len(pos)), int((1 - rate[2]) * len(pos))
 
-    _path = path+'deep118-1/'
+    _path = f'{path}{dataset}/split-{split[0]}{split[1]}{split[2]}-1/'
     os.mkdir(_path)
 
     pos.loc[:sp1].to_csv(_path + 'train_pos.txt', sep=',', index=False, header=None)
     pos.loc[sp1:sp2].to_csv(_path + 'valid_pos.txt', sep=',', index=False, header=None)
     pos.loc[sp2:].to_csv(_path + 'test_pos.txt', sep=',', index=False, header=None)
 
-    with open('all_neg_deep_ddi.csv', 'r') as f:
+    with open(f'{path}{dataset}/ddi_neg.csv', 'r') as f:
         neg = [line.split(',') for line in f.read().split('\n')[:-1]]
     random.shuffle(neg)
     neg = pd.DataFrame(neg, index=None)
@@ -155,4 +159,4 @@ def random_split(path, rate):
     neg.loc[sp2:].to_csv(_path + 'test_neg.txt', sep=',', index=False, header=None)
 
 
-random_split('', rate=[0.1, 0.1, 0.8])
+random_split('../data/', 'CB-DB', [8, 1, 1])

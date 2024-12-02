@@ -6,19 +6,19 @@ from scipy.sparse import csc_matrix
 
 # triplets和dd_dt_tt_triplets两个dictionary的区别在于前者仅区分dd、dt和tt，后者还区分了small和macro
 def dd_dt_tt_build_inter_graph_from_links(dataset, split, saved_relation2id=None):
-    _pre = '../baselines/data/'
+    _pre = 'data/'
     files = { # 这些文件在utils/sample_neg_split.py中生成
         'train': {
-            'pos': f'{_pre}{dataset}{split}/train_pos.txt',
-            'neg': f'{_pre}{dataset}{split}/train_neg.txt'
+            'pos': f'{_pre}{dataset}/split-{split}/train_pos.txt',
+            'neg': f'{_pre}{dataset}/split-{split}/train_neg.txt'
         },
         'valid': {
-            'pos': f'{_pre}{dataset}{split}/valid_pos.txt',
-            'neg': f'{_pre}{dataset}{split}/train_neg.txt' # IDEA: 这里可能应该是valid_neg.txt
+            'pos': f'{_pre}{dataset}/split-{split}/valid_pos.txt',
+            'neg': f'{_pre}{dataset}/split-{split}/valid_neg.txt' # DONE: 这里可能应该是valid_neg.txt
         },
         'test': {
-            'pos': f'{_pre}{dataset}{split}/test_pos.txt',
-            'neg': f'{_pre}{dataset}{split}/test_neg.txt'
+            'pos': f'{_pre}{dataset}/split-{split}/test_pos.txt',
+            'neg': f'{_pre}{dataset}/split-{split}/test_neg.txt'
         }
     }
 
@@ -28,8 +28,8 @@ def dd_dt_tt_build_inter_graph_from_links(dataset, split, saved_relation2id=None
     drug2id, bio2id, target2id = {}, {}, {}
 
     biodrug_set = set(pd.read_csv(f'data/{dataset}/biotech_seqs.csv', header=None).iloc[:, 0]) \
-        if dataset == 'full' else set() # 仅选择第一列，即药物名称
-        # IDEA: 这里不应该是'CB-DB'吗
+        if dataset == 'CB-DB' else set() # 仅选择第一列，即药物名称
+        # DONE: 这里不应该是'CB-DB'吗
 
     # dd_types
     # ub,vd,vb
@@ -235,19 +235,19 @@ def dd_dt_tt_build_inter_graph_from_links(dataset, split, saved_relation2id=None
 
 # 没有用到
 def dd_build_inter_graph_from_links(dataset, split, saved_relation2id=None):
-    _pre = '../baselines/data/'
+    _pre = '../data/'
     files = {
         'train': {
-            'pos': f'{_pre}{dataset}{split}/train_pos.txt',
-            'neg': f'{_pre}{dataset}{split}/train_neg.txt'
+            'pos': f'{_pre}{dataset}/split-{split}/train_pos.txt',
+            'neg': f'{_pre}{dataset}/split-{split}/train_neg.txt'
         },
         'valid': {
-            'pos': f'{_pre}{dataset}{split}/valid_pos.txt',
-            'neg': f'{_pre}{dataset}{split}/train_neg.txt'
+            'pos': f'{_pre}{dataset}/split-{split}/valid_pos.txt',
+            'neg': f'{_pre}{dataset}/split-{split}/valid_neg.txt' # DONE: 这里可能应该是valid_neg.txt
         },
         'test': {
-            'pos': f'{_pre}{dataset}{split}/test_pos.txt',
-            'neg': f'{_pre}{dataset}{split}/test_neg.txt'
+            'pos': f'{_pre}{dataset}/split-{split}/test_pos.txt',
+            'neg': f'{_pre}{dataset}/split-{split}/test_neg.txt'
         }
     }
 
