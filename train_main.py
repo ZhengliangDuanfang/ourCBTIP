@@ -321,8 +321,8 @@ if __name__ == '__main__':
         # 实现diff_loss后再取消注释
         # intra_pairs = load_fp_contrastive_pairs(params.dataset, params.split)
         print("Train Begin")
-        # for epoch in range(1, params.max_epoch + 1): # 调试结束后取消本行注释
-        for epoch in range(1, 3): # 测试结束后删除本行
+        for epoch in range(1, params.max_epoch + 1): # 调试结束后取消本行注释
+        # for epoch in range(1, 3): # 测试结束后删除本行
             emb_intra, emb_inter = train(encoder, decoder_intra, decoder_inter, ff_contra_net, # DONE: 此处dgi_model应改为ff_contra_net
                                          opt, loss_fn,
                                          mol_graphs,
@@ -369,7 +369,6 @@ if __name__ == '__main__':
                     print('Stop training due to more than 20 epochs with no improvement')
                     break
     
-    # 目前可以成功运行到这里
     # IDEA: 以下三行load_state_dict作用不明
     # encoder.load_state_dict(torch.load(f'trained_models/encoder_{model_file_name}'))
     # decoder_inter.load_state_dict(torch.load(f'trained_models/interdec_{model_file_name}'))
