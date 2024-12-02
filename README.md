@@ -12,3 +12,41 @@
 然后运行 `conda install dgl-cuda11.0-0.7.0-py37_0.tar.bz2`。
 
 切换环境：运行指令`conda activate torch17_biomip`
+
+### 数据准备
+
+TODO: 数据预处理部分
+
+训练部分，将存有`mdb`文件的内容从`prot_graph_db.zip`和`smile_graph_db_afp.zip`解压至同样位于`lmdb_files`文件夹下的同名文件夹中；运行`utils/sample_neg_split.py`完成数据的分拆。开始训练前，`data`文件夹下结构应大致如下：
+
+```
+data
+├── calc_fp.py
+├── constract_pp_nn.py
+└── CB-DB
+    ├── biotech_seqs.csv
+    ├── ddi_neg.csv
+    ├── ddi_pos.csv
+    ├── DTIs.csv
+    ├── SMILESstrings.csv
+    ├── target_seqs.csv
+    ├── TTIs.csv
+    ├── lmdb_files
+    │   ├── prot_graph_db.zip
+    |   ├── smile_graph_db_afp.zip
+    │   ├── prot_graph_db
+    │   │   ├── data.mdb
+    │   │   └── lock.mdb
+    │   └── smile_graph_db_afp
+    │       ├── data.mdb
+    │       └── lock.mdb   
+    └── split-811-1
+        ├── test_neg.txt
+        ├── test_pos.txt
+        ├── train_neg.txt
+        ├── train_pos.txt
+        ├── valid_neg.txt
+        └── valid_pos.txt
+
+```
+以上。

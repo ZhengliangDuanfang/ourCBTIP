@@ -158,5 +158,5 @@ def random_split(path, dataset, split):
     neg.loc[sp1:sp2].to_csv(_path + 'valid_neg.txt', sep=',', index=False, header=None)
     neg.loc[sp2:].to_csv(_path + 'test_neg.txt', sep=',', index=False, header=None)
 
-
+# IDEA: 优化此处，以参数形式传入选项
 random_split('../data/', 'CB-DB', [8, 1, 1])
