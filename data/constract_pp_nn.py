@@ -22,12 +22,13 @@ def gen_pairs(dataset_name, K):
         neg_pairs += [[index_i[i], j_neg[j]] for i, j in zip(random_is, random_j_neg)]
     print(pos_pairs)
     print(neg_pairs)
-    pd.DataFrame(pos_pairs).to_csv(f'{dataset_name}/in_pairs_prot.csv', header=False, index=False)
-    pd.DataFrame(neg_pairs).to_csv(f'{dataset_name}/bt_pairs_prot.csv', header=False, index=False)
+    pd.DataFrame(pos_pairs).to_csv(f'{dataset_name}/mfp/in_pairs.csv', header=False, index=False)
+    pd.DataFrame(neg_pairs).to_csv(f'{dataset_name}/mfp/bt_pairs.csv', header=False, index=False)
 
 
 dataset = sys.argv[1]
-df = pd.read_csv(f'{dataset}/cluster_res-ward_n=20.csv', index_col=0, header=None, names=['cluster_id'])
+df = pd.read_csv(f'{dataset}/mfp/cluster_res-ward_n=20.csv', index_col=0, header=None, names=['cluster_id'])
+# IDEA: 大分子目前无法生成聚类，因而无法被加入到三元组中
 print(df)
 for univ in pd.unique(df['cluster_id']):
     print(df[df['cluster_id'] == univ].shape[0])

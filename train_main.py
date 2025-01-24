@@ -56,20 +56,18 @@ def train(encoder, decoder_intra, decoder_inter, dgi_model,
     BCEloss = torch.mean(loss_fn['ERROR'](score_inter, labels)) # 见 model/customized_loss.py 
     BCEloss += params.alpha_loss * torch.mean(loss_fn['ERROR'](score_intra, labels))
     KLloss = torch.mean(loss_fn['DIFF'](score_intra, score_inter))
-    # 实现diff_loss后再取消注释
-    # if epo_no < epo_num_with_fp:
-    #     emb_intra_in1, emb_intra_in2 = emb_intra[intra_pairs['in'][0]], emb_intra[intra_pairs['in'][1]]
-    #     emb_intra_bt2 = emb_intra[intra_pairs['bt'][1]]
-    #     diff_loss = loss_fn['FP_INTRA'](emb_intra_in1, emb_intra_in2, emb_intra_bt2) # IDEA: 实现loss_fn['FP_INTRA']
-    #                 # + loss_fn['FP_INTRA'](prot_emb_intra_in1, prot_emb_intra_in2, prot_emb_intra_bt2)
-    #     print("back:", BCEloss.item(), KLloss.item(), dgi_loss.item(), diff_loss.item())
-    #     curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss + params.theta_loss * diff_loss
-    # else:
-    #     print("back:", BCEloss.item(), KLloss.item(), dgi_loss.item())
-    #     curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss
-    # 实现diff_loss后删除下面2行
-    print("back:", BCEloss.item(), KLloss.item(), dgi_loss.item())
-    curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss
+    
+    diff_loss_implemented = False # 实现 diff_loss 后改为true
+    if epo_no < epo_num_with_fp and diff_loss_implemented:
+        emb_intra_in1, emb_intra_in2 = emb_intra[intra_pairs['in'][0]], emb_intra[intra_pairs['in'][1]]
+        emb_intra_bt2 = emb_intra[intra_pairs['bt'][1]]
+        diff_loss = loss_fn['FP_INTRA'](emb_intra_in1, emb_intra_in2, emb_intra_bt2) # IDEA: 实现loss_fn['FP_INTRA']
+                    # + loss_fn['FP_INTRA'](prot_emb_intra_in1, prot_emb_intra_in2, prot_emb_intra_bt2)
+        print("back:", BCEloss.item(), KLloss.item(), dgi_loss.item(), diff_loss.item())
+        curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss + params.theta_loss * diff_loss
+    else:
+        print("back:", BCEloss.item(), KLloss.item(), dgi_loss.item())
+        curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss
 
     curr_loss.backward()
 
@@ -114,45 +112,46 @@ def save_id_mapping(dataset, split,
     np.save(f'data/{dataset}/{split}_id2relation.npy', id2relation)
 
 
-def load_fp_contrastive_pairs(dataset, split):
-    drug2id = np.load(f'data/{dataset}/{split}_drug2id.npy', allow_pickle=True).item()
-    target2id = np.load(f'data/{dataset}/{split}_target2id.npy', allow_pickle=True).item()
+def load_fp_contrastive_pairs(dataset, drug2id):
+    # drug2id = np.load(f'data/{dataset}/{split}_drug2id.npy', allow_pickle=True).item()
+    # target2id = np.load(f'data/{dataset}/{split}_target2id.npy', allow_pickle=True).item()
 
-    df = pd.read_csv(f'data/{dataset}/in_pairs.csv', names=['mol1', 'mol2'])
+    df = pd.read_csv(f'data/{dataset}/mfp/in_pairs.csv', names=['mol1', 'mol2'])
     df['mol1'] = df['mol1'].map(drug2id)
     df['mol2'] = df['mol2'].map(drug2id)
     df.dropna(inplace=True)
     # assert df.dropna().shape == df.shape
     pos_mols1, pos_mols2 = df['mol1'].tolist(), df['mol2'].tolist()
 
-    df = pd.read_csv(f'data/{dataset}/bt_pairs.csv', names=['mol1', 'mol2'])
+    df = pd.read_csv(f'data/{dataset}/mfp/bt_pairs.csv', names=['mol1', 'mol2'])
     df['mol1'] = df['mol1'].map(drug2id)
     df['mol2'] = df['mol2'].map(drug2id)
     df.dropna(inplace=True)
     neg_mols1, neg_mols2 = df['mol1'].tolist(), df['mol2'].tolist()
 
     # emb_intra = concat target + bio    emb_inter = small + bio
-    if dataset == 'full':
-        for drug in drug2id.keys():
-            if drug.startswith('DB'):
-                target2id[drug] = drug2id[drug] + (target_cnt - small_cnt)
+    # IDEA: 大分子目前无法生成聚类，因而无法被加入到三元组中
+    # if dataset == 'full':
+    #     for drug in drug2id.keys():
+    #         if drug.startswith('DB'):
+    #             target2id[drug] = drug2id[drug] + (target_cnt - small_cnt)
 
-    prot_df = pd.read_csv(f'data/{dataset}/in_pairs_prot.csv', names=['mol1', 'mol2'])
-    prot_df['mol1'] = prot_df['mol1'].map(target2id)
-    prot_df['mol2'] = prot_df['mol2'].map(target2id)
-    prot_df.dropna(inplace=True)
-    pos_prots1, pos_prots2 = prot_df['mol1'].tolist(), prot_df['mol2'].tolist()
+    # prot_df = pd.read_csv(f'data/{dataset}/in_pairs_prot.csv', names=['mol1', 'mol2'])
+    # prot_df['mol1'] = prot_df['mol1'].map(target2id)
+    # prot_df['mol2'] = prot_df['mol2'].map(target2id)
+    # prot_df.dropna(inplace=True)
+    # pos_prots1, pos_prots2 = prot_df['mol1'].tolist(), prot_df['mol2'].tolist()
 
-    prot_df = pd.read_csv(f'data/{dataset}/bt_pairs_prot.csv', names=['mol1', 'mol2'])
-    prot_df['mol1'] = prot_df['mol1'].map(target2id)
-    prot_df['mol2'] = prot_df['mol2'].map(target2id)
-    prot_df.dropna(inplace=True)
-    neg_prots1, neg_prots2 = prot_df['mol1'].tolist(), prot_df['mol2'].tolist()
+    # prot_df = pd.read_csv(f'data/{dataset}/bt_pairs_prot.csv', names=['mol1', 'mol2'])
+    # prot_df['mol1'] = prot_df['mol1'].map(target2id)
+    # prot_df['mol2'] = prot_df['mol2'].map(target2id)
+    # prot_df.dropna(inplace=True)
+    # neg_prots1, neg_prots2 = prot_df['mol1'].tolist(), prot_df['mol2'].tolist()
     return {
         'in': [pos_mols1, pos_mols2],
         'bt': [neg_mols1, neg_mols2],
-        'in_prot': [pos_prots1, pos_prots2],
-        'bt_prot': [neg_prots1, neg_prots2]
+        # 'in_prot': [pos_prots1, pos_prots2],
+        # 'bt_prot': [neg_prots1, neg_prots2]
     }
 
 
@@ -316,10 +315,9 @@ if __name__ == '__main__':
         ).to(params.device)
         cnt_trival = 0
         # load_fp_contrastive_pairs函数的实现见本文件上方
-        # IDEA: 在调用这个函数之前是不是应该先保存一下npy文件，似乎没见到这个函数里面的文件是再哪里写的
         # 补充: intra_pairs后面用于计算diff_loss，实际上目前没有完全实现
         # 实现diff_loss后再取消注释
-        # intra_pairs = load_fp_contrastive_pairs(params.dataset, params.split)
+        intra_pairs = load_fp_contrastive_pairs(params.dataset, drug2id)
         print("Train Begin")
         for epoch in range(1, params.max_epoch + 1): # 调试结束后取消本行注释
         # for epoch in range(1, 3): # 测试结束后删除本行
@@ -420,4 +418,16 @@ if __name__ == '__main__':
             f'{tot_auprc / total_len},'
             f'{tot_ap / total_len},'
             f'{tot_f1 / total_len}\n'
+        )
+    
+    # 方便观察与比对结果
+    end_time_str = time.strftime('%m-%d_%H_%M', time.localtime(time.time()))
+    with open(f'results/{params.dataset}_summary.txt', 'a+') as f:
+        f.write(
+            f'Train dataset: {params.dataset}\nTrain start time: {time_str}\n'
+            f'Train end time: {end_time_str}\n'
+            f'Average F1-score: {tot_f1 / total_len}\n'
+            f'Average AUROC: {tot_auroc / total_len}\n'
+            f'Average AUPRC: {tot_auprc / total_len}\n'
+            f'Average Precision score: {tot_ap / total_len}\n'
         )

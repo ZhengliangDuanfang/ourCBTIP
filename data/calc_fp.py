@@ -16,7 +16,7 @@ def getmorganfingerprint(mol):
 
 
 def gen_fp(sm_path, fp_path):
-    df_smi = pd.read_csv(sm_path, header=None, names=['DBxx', 'smiles'])
+    df_smi = pd.read_csv(sm_path, header=None, names=['DBxx', 'smiles']) # 不将CSV第一行作为表头，并将DBxx和smiles设为两列名称
     smiles = df_smi["smiles"]
 
     mgf_feat_list = []
@@ -54,12 +54,16 @@ def cluster_mols(ds, Xn, method, n_cluster=10):
 
 
 if __name__ == "__main__":
-    gen_fp('C-DB/SMILESstrings.csv', 'deep/morgan_fp.csv')
-    gen_fp('CB-DB/SMILESstrings.csv', 'full/morgan_fp.csv')
-    df = pd.read_csv('deep/morgan_fp.csv', header=None, index_col=0)
+    # IDEA: C-DB
+    # gen_fp('C-DB/SMILESstrings.csv', 'deep/morgan_fp.csv')
+    # df = pd.read_csv('deep/morgan_fp.csv', header=None, index_col=0)
+    # cluster_mols("C-DB", df, method='Hier')
+    # cluster_mols("C-DB", df, method='Hier', n_cluster=30)
 
-    cluster_mols("C-DB", df, method='Hier')
-    cluster_mols("C-DB", df, method='Hier', n_cluster=30)
-    df = pd.read_csv('full/morgan_fp.csv', header=None, index_col=0)
-    cluster_mols("CB-DB", df, method='Hier')
-    cluster_mols("CB-DB", df, method='Hier', n_cluster=30)
+    if not os.path.exists("CB-DB/mfp"):
+        os.makedirs("CB-DB/mfp")
+    gen_fp('CB-DB/SMILESstrings.csv', 'CB-DB/mfp/morgan_fp.csv')
+    df = pd.read_csv('CB-DB/mfp/morgan_fp.csv', header=None, index_col=0)
+    # cluster_mols("CB-DB/mfp", df, method='Hier')
+    # cluster_mols("CB-DB/mfp", df, method='Hier', n_cluster=30)
+    cluster_mols("CB-DB/mfp", df, method='Hier', n_cluster=20) # clusters 数量与 contrast_pp_nn.py 保持一致
