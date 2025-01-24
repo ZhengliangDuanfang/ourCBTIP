@@ -1,6 +1,6 @@
 当前的code分支用于修改代码，保证项目运行，完善项目功能。
 
-运行指令参考：`python train_main.py -d CB-DB -sp 811-1 --gpu 2 --beta_loss 0.3 --gamma_loss 0.001 --alpha_loss 1 -lr 0.001 --max_epoch 500`
+运行指令参考：`python train_main.py -d CB-DB -sp 811-1 --gpu 2 --alpha_loss 1 --beta_loss 0.3 --gamma_loss 0.001 --delta_loss 1 --constant 0.5 -lr 0.001 --max_epoch 500`
 
 运行结果位于`results`文件夹中，性能度量参数结果位于以月份开头、结尾不带`multi`的CSV文件中。
 

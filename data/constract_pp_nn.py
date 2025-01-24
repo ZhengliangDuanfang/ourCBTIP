@@ -6,24 +6,18 @@ import sys
 
 def gen_pairs(dataset_name, K):
     classes = pd.unique(df['cluster_id'])
-    # print(classes)
-    pos_pairs = []
-    neg_pairs = []
+    chem_triple = []
     for ci in classes:
         index_i = list(df[df['cluster_id'] == ci].index)
-        print(index_i)
+        # print(index_i)
         random_is = random.sample(range(0, len(index_i)), min([K, len(index_i)]))
         div = (len(random_is) - len(random_is) % 2) // 2
         j_pos = random_is[:div]
         random_is = random_is[div:]
-        pos_pairs += [[index_i[i], index_i[j]] for i, j in zip(random_is, j_pos)]
         j_neg = list(df[df['cluster_id'] != ci].index)
         random_j_neg = random.sample(range(0, len(j_neg)), min([K, div]))
-        neg_pairs += [[index_i[i], j_neg[j]] for i, j in zip(random_is, random_j_neg)]
-    print(pos_pairs)
-    print(neg_pairs)
-    pd.DataFrame(pos_pairs).to_csv(f'{dataset_name}/mfp/in_pairs.csv', header=False, index=False)
-    pd.DataFrame(neg_pairs).to_csv(f'{dataset_name}/mfp/bt_pairs.csv', header=False, index=False)
+        chem_triple += [[index_i[i], index_i[j], j_neg[k]] for i, j, k in zip(random_is, j_pos, random_j_neg)]
+    pd.DataFrame(chem_triple).to_csv(f'{dataset_name}/mfp/cluster_pairs.csv', header=False, index=False)
 
 
 dataset = sys.argv[1]

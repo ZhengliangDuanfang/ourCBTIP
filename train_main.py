@@ -57,14 +57,15 @@ def train(encoder, decoder_intra, decoder_inter, dgi_model,
     BCEloss += params.alpha_loss * torch.mean(loss_fn['ERROR'](score_intra, labels))
     KLloss = torch.mean(loss_fn['DIFF'](score_intra, score_inter))
     
-    diff_loss_implemented = False # 实现 diff_loss 后改为true
-    if epo_no < epo_num_with_fp and diff_loss_implemented:
-        emb_intra_in1, emb_intra_in2 = emb_intra[intra_pairs['in'][0]], emb_intra[intra_pairs['in'][1]]
-        emb_intra_bt2 = emb_intra[intra_pairs['bt'][1]]
-        diff_loss = loss_fn['FP_INTRA'](emb_intra_in1, emb_intra_in2, emb_intra_bt2) # IDEA: 实现loss_fn['FP_INTRA']
-                    # + loss_fn['FP_INTRA'](prot_emb_intra_in1, prot_emb_intra_in2, prot_emb_intra_bt2)
+    # delta_loss = 1
+    # C = 0.5
+    if epo_no < epo_num_with_fp:
+        emb_intra_in1, emb_intra_in2, emb_intra_bt2 = emb_intra[intra_pairs[0]], emb_intra[intra_pairs[1]], emb_intra[intra_pairs[2]]
+        print("representation size:",emb_intra_in1.size())
+        diff_loss = loss_fn['FP_INTRA'](emb_intra_in1, emb_intra_in2, emb_intra_bt2, params.constant) # DONE: 实现loss_fn['FP_INTRA']
+                    # + loss_fn['FP_INTRA'](prot_emb_intra_in1, prot_emb_intra_in2, prot_emb_intra_bt2) # IDEA: 蛋白质表征
         print("back:", BCEloss.item(), KLloss.item(), dgi_loss.item(), diff_loss.item())
-        curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss + params.theta_loss * diff_loss
+        curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss + params.delta_loss * diff_loss
     else:
         print("back:", BCEloss.item(), KLloss.item(), dgi_loss.item())
         curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss
@@ -111,49 +112,14 @@ def save_id_mapping(dataset, split,
     np.save(f'data/{dataset}/{split}_target2id.npy', target2id)
     np.save(f'data/{dataset}/{split}_id2relation.npy', id2relation)
 
-
 def load_fp_contrastive_pairs(dataset, drug2id):
-    # drug2id = np.load(f'data/{dataset}/{split}_drug2id.npy', allow_pickle=True).item()
-    # target2id = np.load(f'data/{dataset}/{split}_target2id.npy', allow_pickle=True).item()
-
-    df = pd.read_csv(f'data/{dataset}/mfp/in_pairs.csv', names=['mol1', 'mol2'])
+    df = pd.read_csv(f'data/{dataset}/mfp/cluster_pairs.csv', names=['mol1', 'mol2', 'mol3'])
     df['mol1'] = df['mol1'].map(drug2id)
     df['mol2'] = df['mol2'].map(drug2id)
+    df['mol3'] = df['mol3'].map(drug2id)
     df.dropna(inplace=True)
-    # assert df.dropna().shape == df.shape
-    pos_mols1, pos_mols2 = df['mol1'].tolist(), df['mol2'].tolist()
-
-    df = pd.read_csv(f'data/{dataset}/mfp/bt_pairs.csv', names=['mol1', 'mol2'])
-    df['mol1'] = df['mol1'].map(drug2id)
-    df['mol2'] = df['mol2'].map(drug2id)
-    df.dropna(inplace=True)
-    neg_mols1, neg_mols2 = df['mol1'].tolist(), df['mol2'].tolist()
-
-    # emb_intra = concat target + bio    emb_inter = small + bio
-    # IDEA: 大分子目前无法生成聚类，因而无法被加入到三元组中
-    # if dataset == 'full':
-    #     for drug in drug2id.keys():
-    #         if drug.startswith('DB'):
-    #             target2id[drug] = drug2id[drug] + (target_cnt - small_cnt)
-
-    # prot_df = pd.read_csv(f'data/{dataset}/in_pairs_prot.csv', names=['mol1', 'mol2'])
-    # prot_df['mol1'] = prot_df['mol1'].map(target2id)
-    # prot_df['mol2'] = prot_df['mol2'].map(target2id)
-    # prot_df.dropna(inplace=True)
-    # pos_prots1, pos_prots2 = prot_df['mol1'].tolist(), prot_df['mol2'].tolist()
-
-    # prot_df = pd.read_csv(f'data/{dataset}/bt_pairs_prot.csv', names=['mol1', 'mol2'])
-    # prot_df['mol1'] = prot_df['mol1'].map(target2id)
-    # prot_df['mol2'] = prot_df['mol2'].map(target2id)
-    # prot_df.dropna(inplace=True)
-    # neg_prots1, neg_prots2 = prot_df['mol1'].tolist(), prot_df['mol2'].tolist()
-    return {
-        'in': [pos_mols1, pos_mols2],
-        'bt': [neg_mols1, neg_mols2],
-        # 'in_prot': [pos_prots1, pos_prots2],
-        # 'bt_prot': [neg_prots1, neg_prots2]
-    }
-
+    mols1, mols2, mols3 = df['mol1'].tolist(), df['mol2'].tolist(), df['mol3'].tolist()
+    return mols1, mols2, mols3
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
@@ -165,7 +131,7 @@ if __name__ == '__main__':
     if not os.path.isdir('trained_models'):
         os.mkdir('trained_models')
 
-    time_str = time.strftime('%m-%d_%H_%M', time.localtime(time.time()))
+    time_str = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime(time.time()))
 
     # IDEA: generate_macro_mol_graph_datasets实现后取消注释
     # params.aln_path = '/data/rzy/drugbank_prot/full_drugbank/aln'
@@ -275,9 +241,9 @@ if __name__ == '__main__':
         mol_graphs['bio'] = [macro_mol_graphs[id2drug[i]][2] for i in
                              range(small_cnt, drug_cnt)]  # d_id = small_cnt+idx
 
-    model_file_name = f'{time_str}model_{params.dataset}{params.split}.model' \
+    model_file_name = f'{time_str}_model_{params.dataset}{params.split}.model' \
         if params.model_filename is None else params.model_filename
-    result_file_name = f'{time_str}result_{params.dataset}{params.split}.csv'
+    result_file_name = f'{time_str}_result_{params.dataset}_{params.split}'
 
     # model/model_config.py 导入模型
     encoder, decoder_intra, decoder_inter, ff_contra_net = initialize_BioMIP(params)
@@ -319,16 +285,14 @@ if __name__ == '__main__':
         # 实现diff_loss后再取消注释
         intra_pairs = load_fp_contrastive_pairs(params.dataset, drug2id)
         print("Train Begin")
-        for epoch in range(1, params.max_epoch + 1): # 调试结束后取消本行注释
-        # for epoch in range(1, 3): # 测试结束后删除本行
+        for epoch in range(1, params.max_epoch + 1):
             emb_intra, emb_inter = train(encoder, decoder_intra, decoder_inter, ff_contra_net, # DONE: 此处dgi_model应改为ff_contra_net
                                          opt, loss_fn,
                                          mol_graphs,
                                          train_pos_graph, train_neg_graph,
-                                         f'09_loss_{result_file_name}',
+                                         f'{result_file_name}_loss.csv',
                                          epoch,
-                                         0, # 实现diff_loss后应删除
-                                        #  intra_pairs, # 实现diff_loss后再取消注释
+                                         intra_pairs, # DONE: 实现 diff_loss
                                          epo_num_with_fp=20)
             print('predicting for valid data')
 
@@ -355,10 +319,10 @@ if __name__ == '__main__':
                                                            metrics.average_precision_score(test_G, test_P2), \
                                                            calc_aupr(test_G, test_P2), \
                                                            metrics.f1_score(test_G, eval_threshold(test_G, test_P2)[1])
-                if not os.path.exists(f'results/{result_file_name}'):
-                    with open(f'results/{result_file_name}', 'w') as f:
+                if not os.path.exists(f'results/{result_file_name}.csv'):
+                    with open(f'results/{result_file_name}.csv', 'w') as f:
                         f.write('epoch,auroc,auprc,ap,f1\n')
-                with open(f'results/{result_file_name}', 'a+') as f:
+                with open(f'results/{result_file_name}.csv', 'a+') as f:
                     f.write(f'{epoch},{test_auroc},{test_auprc},{test_ap},{test_f1}\n')
             else:
                 if epoch > params.min_epoch:
@@ -388,7 +352,7 @@ if __name__ == '__main__':
                              multi_res=True)
     res_list = []
 
-    print(len(rel2gt_pred.keys()), rel2gt_pred.keys())  # 62
+    # print(len(rel2gt_pred.keys()), rel2gt_pred.keys())  # 62
     total_len, tot_auroc, tot_auprc, tot_ap, tot_f1 = 0, 0.0, 0.0, 0.0, 0.0
     for k, v in rel2gt_pred.items():
         _len = v[0].shape[0]
@@ -411,7 +375,7 @@ if __name__ == '__main__':
         res_list.append([int(k[1]), _len, test_auroc, test_auprc, test_ap, test_f1])
     pd.DataFrame(res_list).to_csv(f'results/{result_file_name}_multi.csv', index=False,
                                   header=['rel_name', 'test_len', 'auroc', 'auprc', 'ap', 'f1'])
-    with open(f'results/{result_file_name}', 'a+') as f:
+    with open(f'results/{result_file_name}.csv', 'a+') as f:
         f.write(
             f'final,{params.dataset},'
             f'{tot_auroc / total_len},'
@@ -421,13 +385,16 @@ if __name__ == '__main__':
         )
     
     # 方便观察与比对结果
-    end_time_str = time.strftime('%m-%d_%H_%M', time.localtime(time.time()))
+    end_time_str = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime(time.time()))
     with open(f'results/{params.dataset}_summary.txt', 'a+') as f:
         f.write(
             f'Train dataset: {params.dataset}\nTrain start time: {time_str}\n'
             f'Train end time: {end_time_str}\n'
+            f'Epoch Number: {epoch}\n'
+            f'Delta: {params.delta_loss}\n'
+            f'Constant: {params.constant}\n'
             f'Average F1-score: {tot_f1 / total_len}\n'
             f'Average AUROC: {tot_auroc / total_len}\n'
             f'Average AUPRC: {tot_auprc / total_len}\n'
-            f'Average Precision score: {tot_ap / total_len}\n'
+            f'Average Precision score: {tot_ap / total_len}\n\n'
         )
