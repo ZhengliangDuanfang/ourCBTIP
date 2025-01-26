@@ -281,9 +281,11 @@ if __name__ == '__main__':
         ).to(params.device)
         cnt_trival = 0
         # load_fp_contrastive_pairs函数的实现见本文件上方
-        # 补充: intra_pairs后面用于计算diff_loss，实际上目前没有完全实现
-        # 实现diff_loss后再取消注释
         intra_pairs = load_fp_contrastive_pairs(params.dataset, drug2id)
+        # encoder.to(params.device) # IDEA: 解决内存限制问题
+        decoder_intra.to(params.device)
+        decoder_inter.to(params.device)
+        ff_contra_net.to(params.device)
         print("Train Begin")
         for epoch in range(1, params.max_epoch + 1):
             emb_intra, emb_inter = train(encoder, decoder_intra, decoder_inter, ff_contra_net, # DONE: 此处dgi_model应改为ff_contra_net
