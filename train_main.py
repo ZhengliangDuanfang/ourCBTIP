@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-
+import json
 import pandas as pd
 import torch
 import numpy as np
@@ -61,7 +61,6 @@ def train(encoder, decoder_intra, decoder_inter, dgi_model,
     # C = 0.5
     if epo_no < epo_num_with_fp:
         emb_intra_in1, emb_intra_in2, emb_intra_bt2 = emb_intra[intra_pairs[0]], emb_intra[intra_pairs[1]], emb_intra[intra_pairs[2]]
-        print("representation size:",emb_intra_in1.size())
         diff_loss = loss_fn['FP_INTRA'](emb_intra_in1, emb_intra_in2, emb_intra_bt2, params.constant) # DONE: 实现loss_fn['FP_INTRA']
                     # + loss_fn['FP_INTRA'](prot_emb_intra_in1, prot_emb_intra_in2, prot_emb_intra_bt2) # IDEA: 蛋白质表征
         print("back:", BCEloss.item(), KLloss.item(), dgi_loss.item(), diff_loss.item())
@@ -102,15 +101,16 @@ def predicting(model_intra, model_inter,
            torch.cat([pos_score2, neg_score2]).detach().cpu().numpy()
 
 
-def save_id_mapping(dataset, split,
+def save_id_mapping(pathname,
                     id2drug, drug2id,
                     id2target, target2id,
-                    id2relation):
-    np.save(f'data/{dataset}/{split}_id2drug.npy', id2drug)
-    np.save(f'data/{dataset}/{split}_drug2id.npy', drug2id)
-    np.save(f'data/{dataset}/{split}_id2target.npy', id2target)
-    np.save(f'data/{dataset}/{split}_target2id.npy', target2id)
-    np.save(f'data/{dataset}/{split}_id2relation.npy', id2relation)
+                    id2relation, relation2id):
+    np.save(f'{pathname}_id2drug.npy', id2drug)
+    np.save(f'{pathname}_drug2id.npy', drug2id)
+    np.save(f'{pathname}_id2target.npy', id2target)
+    np.save(f'{pathname}_target2id.npy', target2id)
+    np.save(f'{pathname}_id2relation.npy', id2relation)
+    np.save(f'{pathname}_relation2id.npy', relation2id)
 
 def load_fp_contrastive_pairs(dataset, drug2id):
     df = pd.read_csv(f'data/{dataset}/mfp/cluster_pairs.csv', names=['mol1', 'mol2', 'mol3'])
@@ -178,7 +178,7 @@ if __name__ == '__main__':
     # 第二项则是药物互作用的类型；第二层是scipy.sparse.csc_matrix，
     # 代表了这种三元组构成的图的邻接矩阵
     # dd_dt_tt_triplets是多层数组，第一层是train/valid/test，第二层是pos/neg，
-    # 第三层是dd/dt/tt，且只有train+pos三种都有，其余仅有dd，最后才是三元组的list
+    # 第三层是dd/dt/tt，且只有train+pos三种都有，其余仅有dd，最后才是药物ID-药物ID-互作用关系ID三元组的list
     # triplets中没有第三层，而是合并起来，其余与dd_dt_tt_triplets相同
     # relation2id除了ddi的类型，还有'dt'和'tt'两种
     pos_adj_dict, neg_adj_dict, \
@@ -189,6 +189,8 @@ if __name__ == '__main__':
         dataset=params.dataset,
         split=params.split
     )
+    with open('trained_models/numbers.json', 'w') as f:
+        json.dump({'drug_cnt': drug_cnt, 'target_cnt': target_cnt, 'small_cnt': small_cnt}, f, indent=4)
 
     # init pos/neg inter-graph
     # 调用utils/hete_data_utils.py中的方法将小分子-蛋白质的互作用图转换为dgl图
@@ -203,11 +205,12 @@ if __name__ == '__main__':
         relation2id=relation2id
     )
 
-    params.rel2id = train_pos_graph[1]
+    params.rel2id = train_pos_graph[1] # params.rel2id 与 relation2id 一致
     params.num_rels = len(params.rel2id)
-    params.id2rel = { # 没找到这个变量在哪里会用到
-        v: train_pos_graph[0].to_canonical_etype(k) for k, v in params.rel2id.items()
-    }
+    id2relation = {v: k for k, v in relation2id.items()}
+    # params.id2rel = { # 没找到这个变量在哪里会用到
+    #     v: train_pos_graph[0].to_canonical_etype(k) for k, v in params.rel2id.items()
+    # }
     train_pos_graph, train_neg_graph = train_pos_graph[0], train_neg_graph[0]
     # 此时这两个graph都是dgl.heterograph了
 
@@ -245,6 +248,11 @@ if __name__ == '__main__':
         if params.model_filename is None else params.model_filename
     result_file_name = f'{time_str}_result_{params.dataset}_{params.split}'
 
+    print("Test build_valid_test_graph function")
+    # print(relation2id, id2relation)
+    # print(drug_cnt, len(drug2id))
+    # print(type(triplets['test']['pos']))
+    # print(triplets['test']['pos'])
     # model/model_config.py 导入模型
     encoder, decoder_intra, decoder_inter, ff_contra_net = initialize_BioMIP(params)
     # 从 utils/hete_data_utils.py 中导入测试图数据
@@ -333,6 +341,11 @@ if __name__ == '__main__':
                     print('Stop training due to more than 20 epochs with no improvement')
                     break
     
+    # 保存训练结果
+    torch.save(encoder.state_dict(), f'trained_models/encoder_{model_file_name}')
+    torch.save(decoder_inter.state_dict(), f'trained_models/interdec_{model_file_name}')
+    torch.save(decoder_intra.state_dict(), f'trained_models/intradec_{model_file_name}')
+    save_id_mapping(f'trained_models/{params.dataset}_{params.split}', id2drug, drug2id, id2target, target2id, id2relation, relation2id)
     # IDEA: 以下三行load_state_dict作用不明
     # encoder.load_state_dict(torch.load(f'trained_models/encoder_{model_file_name}'))
     # decoder_inter.load_state_dict(torch.load(f'trained_models/interdec_{model_file_name}'))
