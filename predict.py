@@ -6,6 +6,7 @@ from utils.hete_data_utils import build_valid_test_graph
 import torch
 import json
 import numpy as np
+import dgl
 
 def load_id_mapping(pathname):
     id2drug = np.load(f'{pathname}_id2drug.npy', allow_pickle=True).item()
@@ -16,21 +17,7 @@ def load_id_mapping(pathname):
     relation2id = np.load(f'{pathname}_relation2id.npy', allow_pickle=True).item()
     return id2drug, drug2id, id2target, target2id, id2relation, relation2id
 
-if __name__ == '__main__':
-    params = parser.parse_args()
-    params.split = '811-1'
-    if params.dataset != 'CB-DB' or params.split != '811-1':
-        raise NotImplementedError
-    if params.dataset == 'CB-DB':
-        params.small_mol_db_path = f'./data/{params.dataset}/lmdb_files/smile_graph_db_{params.SMILES_featurizer}'
-        params.macro_mol_db_path = f'./data/{params.dataset}/lmdb_files/prot_graph_db'
-        model_file_name = 'CB-DB-test.model'
-
-    if not params.disable_cuda and torch.cuda.is_available():
-        params.device = torch.device('cuda:%d' % params.gpu)
-    else:
-        params.device = torch.device('cpu')
-
+def prediction_setup(params, model_file_name):
     # 调用utils/intra_graph_dataset.py中的方法加载小分子和蛋白质的内部图数据集
     small_mol_graphs = IntraGraphDataset(db_path=params.small_mol_db_path, db_name='small_mol')
     macro_mol_graphs = IntraGraphDataset(db_path=params.macro_mol_db_path, db_name='macro_mol')
@@ -61,21 +48,62 @@ if __name__ == '__main__':
         mol_graphs['bio'] = [macro_mol_graphs[id2drug[i]][2] for i in
                              range(small_cnt, drug_cnt)]
         
-    # TODO
-    # train_pos_graph 需要从 ssp_multigraph_to_dgl 生成
-    # edges 为输入
+    loaded_graphs, loaded_labels = dgl.load_graphs(f'trained_models/{params.dataset}_{params.split}_graph.dgl')
+    train_pos_graph = loaded_graphs[0]
+    train_pos_graph = train_pos_graph.to(params.device)
 
     encoder = GNN_GNN_GNN(params)
     decoder_inter = MultiInnerProductDecoder(params.inp_dim, params.num_rels, params)
-    # decoder_intra = MultiInnerProductDecoder(params.inp_dim, params.num_rels, params)
     encoder.load_state_dict(torch.load(f'trained_models/encoder_{model_file_name}'))
     decoder_inter.load_state_dict(torch.load(f'trained_models/interdec_{model_file_name}'))
-    # decoder_intra.load_state_dict(torch.load(f'trained_models/intradec_{model_file_name}'))
+    encoder.eval()
+    decoder_inter.eval()
 
-    raise NotImplementedError
     emb_intra, emb_inter = encoder(mol_graphs, train_pos_graph)
     emb_inter = emb_inter['drug']
+    return decoder_inter, emb_inter, drug_cnt, relation2id, id2relation
+
+def predict(edges, decoder_inter, emb_inter, drug_cnt, relation2id, id2relation):
+    decoder_inter.eval()
     input_graph = build_valid_test_graph(drug_cnt, edges, relation2id, id2relation)
     result = decoder_inter(input_graph, emb_inter)
+    
+    # formatting for output
+    rel_types = input_graph.canonical_etypes
+    summary_dict = {}
+    for etype_id in range(len(rel_types)):
+        edge_index0, edge_index1 = input_graph.edges(etype=rel_types[etype_id])
+        result_by_relation = result[rel_types[etype_id]]
+        if not (edge_index0.shape == edge_index1.shape == result_by_relation.shape):
+            raise ValueError
+        if(min(edge_index0.shape)!=0):
+            for i in range(len(edge_index0)):
+                summary_dict[[edge_index0[i].item(), edge_index1[i].item(), relation2id[rel_types[etype_id][1]]]] = result_by_relation[i].item()
+    return summary_dict
 
+if __name__ == '__main__':
+    edges_list = [[1892, 299, 2], [574, 1618, 36]]
+    edges = np.array(edges_list)
+    # edges = np.load(f'trained_models/triplets_test_pos.npy', allow_pickle=True)
+
+    params = parser.parse_args()
+    if params.dataset != 'CB-DB' or params.split != '811-1':
+        raise NotImplementedError
+    if params.dataset == 'CB-DB':
+        params.small_mol_db_path = f'./data/{params.dataset}/lmdb_files/smile_graph_db_{params.SMILES_featurizer}'
+        params.macro_mol_db_path = f'./data/{params.dataset}/lmdb_files/prot_graph_db'
+        model_file_name = 'CB-DB-test.model'
+
+    if not params.disable_cuda and torch.cuda.is_available():
+        params.device = torch.device('cuda:%d' % params.gpu)
+    else:
+        params.device = torch.device('cpu')
+
+    decoder_inter, emb_inter, drug_cnt, relation2id, id2relation = prediction_setup(params, model_file_name)
+    summary_dict = predict(edges, decoder_inter, emb_inter, drug_cnt, relation2id, id2relation)
+    # print(len(summary_dict), edges.shape)
+    print(summary_dict)
+    summary_dict2 = predict(edges, decoder_inter, emb_inter, drug_cnt, relation2id, id2relation)
+    # print(len(summary_dict), edges.shape)
+    print(summary_dict2)
 # # python predict.py --dataset CB-DB --split 811-1 --gpu 2

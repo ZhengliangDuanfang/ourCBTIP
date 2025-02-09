@@ -5,6 +5,7 @@ import json
 import pandas as pd
 import torch
 import numpy as np
+import dgl
 from sklearn import metrics
 from model import build_optimizer
 from model.customized_loss import select_loss_function
@@ -213,6 +214,7 @@ if __name__ == '__main__':
     # }
     train_pos_graph, train_neg_graph = train_pos_graph[0], train_neg_graph[0]
     # 此时这两个graph都是dgl.heterograph了
+    dgl.save_graphs(f'trained_models/{params.dataset}_{params.split}_graph.dgl', train_pos_graph)
 
     # add edges in valid set, whose 'mask' = 1
 
@@ -248,11 +250,7 @@ if __name__ == '__main__':
         if params.model_filename is None else params.model_filename
     result_file_name = f'{time_str}_result_{params.dataset}_{params.split}'
 
-    print("Test build_valid_test_graph function")
-    # print(relation2id, id2relation)
-    # print(drug_cnt, len(drug2id))
-    # print(type(triplets['test']['pos']))
-    # print(triplets['test']['pos'])
+    np.save(f'trained_models/triplets_test_pos.npy', triplets['test']['pos'])
     # model/model_config.py 导入模型
     encoder, decoder_intra, decoder_inter, ff_contra_net = initialize_BioMIP(params)
     # 从 utils/hete_data_utils.py 中导入测试图数据
@@ -346,11 +344,7 @@ if __name__ == '__main__':
     torch.save(decoder_inter.state_dict(), f'trained_models/interdec_{model_file_name}')
     torch.save(decoder_intra.state_dict(), f'trained_models/intradec_{model_file_name}')
     save_id_mapping(f'trained_models/{params.dataset}_{params.split}', id2drug, drug2id, id2target, target2id, id2relation, relation2id)
-    # IDEA: 以下三行load_state_dict作用不明
-    # encoder.load_state_dict(torch.load(f'trained_models/encoder_{model_file_name}'))
-    # decoder_inter.load_state_dict(torch.load(f'trained_models/interdec_{model_file_name}'))
 
-    # decoder_intra.load_state_dict(torch.load(f'trained_models/intradec_{model_file_name}'))
     emb_intra, emb_inter = encoder(mol_graphs, train_pos_graph)
 
     if emb_intra['bio'] is not None:
@@ -369,7 +363,11 @@ if __name__ == '__main__':
 
     # print(len(rel2gt_pred.keys()), rel2gt_pred.keys())  # 62
     total_len, tot_auroc, tot_auprc, tot_ap, tot_f1 = 0, 0.0, 0.0, 0.0, 0.0
+    count = 0 # for debug
     for k, v in rel2gt_pred.items():
+        count += 1 
+        torch.save(v[0], f'trained_models/test_ref_{count}.pt')
+        torch.save(v[1], f'trained_models/test_perdict_{count}.pt')
         _len = v[0].shape[0]
         if _len == 0:
             res_list.append([int(k[1]), 0, 0, 0, 0, 0])
