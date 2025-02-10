@@ -7,6 +7,9 @@ import torch
 import json
 import numpy as np
 import dgl
+import hashlib
+def tensor_hash(tensor):
+    return hashlib.md5(tensor.cpu().detach().numpy().tobytes()).hexdigest()
 
 def load_id_mapping(pathname):
     id2drug = np.load(f'{pathname}_id2drug.npy', allow_pickle=True).item()
@@ -57,10 +60,12 @@ def prediction_setup(params, model_file_name):
     encoder.load_state_dict(torch.load(f'trained_models/encoder_{model_file_name}'))
     decoder_inter.load_state_dict(torch.load(f'trained_models/interdec_{model_file_name}'))
     encoder.eval()
+    decoder_inter.to(params.device)
     decoder_inter.eval()
 
     emb_intra, emb_inter = encoder(mol_graphs, train_pos_graph)
     emb_inter = emb_inter['drug']
+    # torch.save(emb_inter, f'trained_models/emb_inter.pt')
     return decoder_inter, emb_inter, drug_cnt, relation2id, id2relation
 
 def predict(edges, decoder_inter, emb_inter, drug_cnt, relation2id, id2relation):
@@ -70,7 +75,7 @@ def predict(edges, decoder_inter, emb_inter, drug_cnt, relation2id, id2relation)
     
     # formatting for output
     rel_types = input_graph.canonical_etypes
-    summary_dict = {}
+    summary_dict = []
     for etype_id in range(len(rel_types)):
         edge_index0, edge_index1 = input_graph.edges(etype=rel_types[etype_id])
         result_by_relation = result[rel_types[etype_id]]
@@ -78,7 +83,7 @@ def predict(edges, decoder_inter, emb_inter, drug_cnt, relation2id, id2relation)
             raise ValueError
         if(min(edge_index0.shape)!=0):
             for i in range(len(edge_index0)):
-                summary_dict[[edge_index0[i].item(), edge_index1[i].item(), relation2id[rel_types[etype_id][1]]]] = result_by_relation[i].item()
+                summary_dict.append([edge_index0[i].item(), edge_index1[i].item(), relation2id[rel_types[etype_id][1]], result_by_relation[i].item()])
     return summary_dict
 
 if __name__ == '__main__':
@@ -100,10 +105,14 @@ if __name__ == '__main__':
         params.device = torch.device('cpu')
 
     decoder_inter, emb_inter, drug_cnt, relation2id, id2relation = prediction_setup(params, model_file_name)
+    # loaded_emb_inter = torch.load('trained_models/emb_inter.pt')
+    # print(tensor_hash(loaded_emb_inter))
+    # summary_dict = predict(edges, decoder_inter, loaded_emb_inter, drug_cnt, relation2id, id2relation)
     summary_dict = predict(edges, decoder_inter, emb_inter, drug_cnt, relation2id, id2relation)
+    # print(decoder_inter)
     # print(len(summary_dict), edges.shape)
     print(summary_dict)
-    summary_dict2 = predict(edges, decoder_inter, emb_inter, drug_cnt, relation2id, id2relation)
-    # print(len(summary_dict), edges.shape)
-    print(summary_dict2)
+    # summary_dict2 = predict(edges, decoder_inter, emb_inter, drug_cnt, relation2id, id2relation)
+    # print(len(summary_dict2), edges.shape)
+    # print(summary_dict2)
 # # python predict.py --dataset CB-DB --split 811-1 --gpu 2
