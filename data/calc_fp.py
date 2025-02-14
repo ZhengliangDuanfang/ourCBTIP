@@ -54,16 +54,14 @@ def cluster_mols(ds, Xn, method, n_cluster=10):
 
 
 if __name__ == "__main__":
-    # IDEA: C-DB
-    # gen_fp('C-DB/SMILESstrings.csv', 'deep/morgan_fp.csv')
-    # df = pd.read_csv('deep/morgan_fp.csv', header=None, index_col=0)
-    # cluster_mols("C-DB", df, method='Hier')
-    # cluster_mols("C-DB", df, method='Hier', n_cluster=30)
+    if not os.path.exists("C-DB/mfp"):
+        os.makedirs("C-DB/mfp")
+    gen_fp('C-DB/SMILESstrings.csv', 'C-DB/mfp/morgan_fp.csv')
+    df = pd.read_csv('C-DB/mfp/morgan_fp.csv', header=None, index_col=0)
+    cluster_mols("C-DB/mfp", df, method='Hier', n_cluster=20)
 
     if not os.path.exists("CB-DB/mfp"):
         os.makedirs("CB-DB/mfp")
     gen_fp('CB-DB/SMILESstrings.csv', 'CB-DB/mfp/morgan_fp.csv')
     df = pd.read_csv('CB-DB/mfp/morgan_fp.csv', header=None, index_col=0)
-    # cluster_mols("CB-DB/mfp", df, method='Hier')
-    # cluster_mols("CB-DB/mfp", df, method='Hier', n_cluster=30)
     cluster_mols("CB-DB/mfp", df, method='Hier', n_cluster=20) # clusters 数量与 contrast_pp_nn.py 保持一致
