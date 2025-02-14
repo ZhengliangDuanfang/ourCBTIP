@@ -138,14 +138,8 @@ if __name__ == '__main__':
     # params.aln_path = '/data/rzy/drugbank_prot/full_drugbank/aln'
     # params.npy_path = '/data/rzy/drugbank_prot/full_drugbank/pconsc4'
 
-    if params.dataset == 'CB-DB':
-        params.small_mol_db_path = f'./data/{params.dataset}/lmdb_files/smile_graph_db_{params.SMILES_featurizer}'
-        params.macro_mol_db_path = f'./data/{params.dataset}/lmdb_files/prot_graph_db'
-    # elif params.dataset == 'C-DB':
-    #     params.small_mol_db_path = f'/data/rzy/deep/smile_graph_db_{params.SMILES_featurizer}'
-    #     params.macro_mol_db_path = f'/data/rzy/deep/prot_graph_db'  # _{params.prot_featurizer}
-    else:
-        raise NotImplementedError
+    params.small_mol_db_path = f'./data/{params.dataset}/lmdb_files/smile_graph_db_{params.SMILES_featurizer}'
+    params.macro_mol_db_path = f'./data/{params.dataset}/lmdb_files/prot_graph_db'
 
     print('small molecule db_path:', params.small_mol_db_path)
     print('macro molecule db_path:', params.macro_mol_db_path)
@@ -366,8 +360,8 @@ if __name__ == '__main__':
     count = 0 # for debug
     for k, v in rel2gt_pred.items():
         count += 1 
-        torch.save(v[0], f'trained_models/test_ref_{count}.pt')
-        torch.save(v[1], f'trained_models/test_perdict_{count}.pt')
+        # torch.save(v[0], f'trained_models/test_ref_{count}.pt')
+        # torch.save(v[1], f'trained_models/test_perdict_{count}.pt')
         _len = v[0].shape[0]
         if _len == 0:
             res_list.append([int(k[1]), 0, 0, 0, 0, 0])

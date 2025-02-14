@@ -1,5 +1,5 @@
 import os
-
+import sys
 import pandas as pd
 import numpy as np
 from scipy.sparse import csc_matrix
@@ -132,6 +132,7 @@ def process_files(files, saved_relation2id=None):
 def random_split(path, dataset, split):
     import random
 
+    split = [int(i) for i in split]
     split_sum = sum(split)
     rate = [split[i] / split_sum for i in range(3)]
 
@@ -159,4 +160,8 @@ def random_split(path, dataset, split):
     neg.loc[sp2:].to_csv(_path + 'test_neg.txt', sep=',', index=False, header=None)
 
 # IDEA: 优化此处，以参数形式传入选项
-random_split('../data/', 'CB-DB', [8, 1, 1])
+if len(sys.argv) < 3:
+    raise IndexError('More parameters are required')
+dataset = sys.argv[1]
+split = sys.argv[2]
+random_split('../data/', dataset, split)
