@@ -19,11 +19,11 @@ def read_csv_file(drug_id_set, file_path):
 
 # 获取 drug_id_set
 def get_drug_id_set():
-    if os.path.exists("./data/drug_id_set"):
-        with open("./data/drug_id_set", "rb") as f:
+    if os.path.exists("./data/drug_set"):
+        with open("./data/drug_set", "rb") as f:
             drug_id_set = pickle.load(f)
     else:
-        drug_id_set = {}
+        drug_id_set = set()
         read_csv_file(drug_id_set, "./data/CB-DB/ddi_pos.csv")
         read_csv_file(drug_id_set, "./data/CB-DB/ddi_neg.csv")
         # 保存 drug_set
@@ -104,3 +104,10 @@ def get_drug_info():
 
 drug_info = get_drug_info()
 drug_id_set = get_drug_id_set()
+
+# 遍历drug_info，如果drug_info的drug_id在drug_id_set中，就保存，否则删除该条记录
+filtered_drug_info = [drug for drug in drug_info if drug[0] in drug_id_set]
+with open('./data/filtered_drug_info', 'wb') as f:
+    pickle.dump(filtered_drug_info, f)
+print(len(filtered_drug_info))
+print(len(drug_id_set))
