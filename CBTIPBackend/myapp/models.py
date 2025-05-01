@@ -28,3 +28,11 @@ class Relation(db.Model):
     drug_id_1 = db.Column(db.String(20), nullable=False)
     drug_id_2 = db.Column(db.String(20), nullable=False)
     relation = db.Column(db.Integer, nullable=False)
+
+
+class Template(db.Model):
+    __tablename__ = 'template'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    relation_id = db.Column(db.Integer, nullable=False)
+    template = db.Column(db.String(300), nullable=False)

@@ -1,9 +1,10 @@
 from flask import Blueprint, request
 
 from ..plugin import db, siwa
-from ..models import User, Drug
+from ..models import User, Drug, Template
 from ..utils.ApiResult import ApiResult
 from ..utils.CBTIP import ddi_process
+from ..utils.relation_discription import apply_template
 
 
 bp = Blueprint('main', __name__)
@@ -69,8 +70,15 @@ def get_ddi():
     drug_1 = Drug.query.filter_by(drug_id=drug_id_1).first()
     drug_2 = Drug.query.filter_by(drug_id=drug_id_2).first()
     if drug_1 and drug_2:
-        ddi = ddi_process(drug_id_1, drug_id_2)
-        return ApiResult(code=200, message='get ddi successfully', data=ddi).make_response()
+        relations = ddi_process(drug_id_1, drug_id_2)
+        descriptions = []
+        for relation in relations:
+            # 提取模板
+            template = Template.query.filter_by(relation_id=relation).first()
+            # 应用模板
+            description = apply_template(template.template, drug_1.name, drug_2.name)
+            descriptions.append(description)
+        return ApiResult(code=200, message='get ddi successfully', data=descriptions).make_response()
     else:
         return ApiResult(code=404, message='Drug not found').make_response()
     
