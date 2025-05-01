@@ -1,5 +1,5 @@
 import os
-import csv2
+import csv
 import pickle
 import xml.etree.ElementTree as ET
 from lxml import etree
