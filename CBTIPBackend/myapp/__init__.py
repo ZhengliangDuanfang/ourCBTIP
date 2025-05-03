@@ -1,7 +1,8 @@
 from flask import Flask
 from .config import Config
 from .plugin import db, cors, siwa
-
+from ...predict import prediction_setup
+from ...utils.arg_parser import get_params
 
 def _load_plugins(app):
     db.init_app(app)
@@ -11,6 +12,12 @@ def _load_plugins(app):
 
 def _load_config(app):
     app.config.from_object(Config)
+    params = get_params()
+    setups = prediction_setup(params, params.model_filename)
+    app.config['SETUPS'] = dict(zip(
+        ['decoder_inter', 'emb_inter', 'drug_cnt', 'relation2id', 'id2relation', 'id2drug', 'drug2id', 'id2target', 'target2id'],
+        setups
+    ))
 
 
 def _init_blueprint(app):

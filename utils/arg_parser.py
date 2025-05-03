@@ -29,5 +29,5 @@ parser.add_argument('--learning_rate', '-lr', type=float, default=0.001)
 parser.add_argument('--alpha_loss', type=float, default=1.)
 parser.add_argument('--beta_loss', type=float, default=0.3)
 parser.add_argument('--gamma_loss', type=float, default=0.001)
-
-# # python train_main.py -d deep -sp 415-2 --gpu 2 --beta_loss 0.3 --gamma_loss 0.001 --alpha_loss 1 -lr 0.001 --max_epoch 500
+parser.add_argument('--delta_loss', type=float, default=0.)
+parser.add_argument('--constant', type=float, default=0.)

@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, current_app
 
 from ..plugin import db, siwa
 from ..models import User, Drug, Template
@@ -70,7 +70,7 @@ def get_ddi():
     drug_1 = Drug.query.filter_by(drug_id=drug_id_1).first()
     drug_2 = Drug.query.filter_by(drug_id=drug_id_2).first()
     if drug_1 and drug_2:
-        relations = ddi_process(drug_id_1, drug_id_2)
+        relations = ddi_process(drug_id_1, drug_id_2, current_app.config['SETUPS'])
         descriptions = []
         for relation in relations:
             # 提取模板

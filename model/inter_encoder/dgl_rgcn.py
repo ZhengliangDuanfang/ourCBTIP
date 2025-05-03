@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class RGCN(nn.Module): # question: 为什么只有两层？
+class RGCN(nn.Module):
     def __init__(self, in_feats, hid_feats, out_feats, rel_names):
         super().__init__()
         # https://docs.dgl.ai/en/0.6.x/api/python/nn.pytorch.html#heterographconv
