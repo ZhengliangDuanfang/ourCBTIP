@@ -66,9 +66,15 @@ def prediction_setup(params, model_file_name):
     emb_intra, emb_inter = encoder(mol_graphs, train_pos_graph)
     emb_inter = emb_inter['drug']
     # torch.save(emb_inter, f'trained_models/emb_inter.pt')
-    return decoder_inter, emb_inter, drug_cnt, relation2id, id2relation
+    return decoder_inter, emb_inter, drug_cnt, relation2id, id2relation, id2drug, drug2id, id2target, target2id
 
-def predict(edges, decoder_inter, emb_inter, drug_cnt, relation2id, id2relation):
+def predict(edges_by_name, decoder_inter, emb_inter, drug_cnt, relation2id, id2relation, id2drug, drug2id):
+    edges_by_id = []
+    for edge in edges_by_name:
+        edges_by_id.append([drug2id[edge[0]], drug2id[edge[1]], relation2id[edge[2]]])
+    # edges_by_id = [[1892, 299, 2], [574, 1618, 36]] # drugid, drugid, relationid
+    edges = np.array(edges_by_id)
+    # edges = np.load(f'trained_models/triplets_test_pos.npy', allow_pickle=True)
     decoder_inter.eval()
     input_graph = build_valid_test_graph(drug_cnt, edges, relation2id, id2relation)
     result = decoder_inter(input_graph, emb_inter)
@@ -83,14 +89,10 @@ def predict(edges, decoder_inter, emb_inter, drug_cnt, relation2id, id2relation)
             raise ValueError
         if(min(edge_index0.shape)!=0):
             for i in range(len(edge_index0)):
-                summary_dict.append([edge_index0[i].item(), edge_index1[i].item(), relation2id[rel_types[etype_id][1]], result_by_relation[i].item()])
+                summary_dict.append([id2drug[edge_index0[i].item()], id2drug[edge_index1[i].item()], rel_types[etype_id][1], result_by_relation[i].item()])
     return summary_dict
 
 if __name__ == '__main__':
-    edges_list = [[1892, 299, 2], [574, 1618, 36]]
-    edges = np.array(edges_list)
-    # edges = np.load(f'trained_models/triplets_test_pos.npy', allow_pickle=True)
-
     params = parser.parse_args()
     if params.dataset != 'CB-DB' or params.split != '811-1':
         raise NotImplementedError
@@ -104,11 +106,14 @@ if __name__ == '__main__':
     else:
         params.device = torch.device('cpu')
 
-    decoder_inter, emb_inter, drug_cnt, relation2id, id2relation = prediction_setup(params, model_file_name)
+    decoder_inter, emb_inter, drug_cnt, relation2id, id2relation,\
+    id2drug, drug2id, id2target, target2id = prediction_setup(params, model_file_name)
+    ##########################
+    edges_list = [['DB01495','DB00313','0'],['DB14043','DB00347','0']]    
     # loaded_emb_inter = torch.load('trained_models/emb_inter.pt')
     # print(tensor_hash(loaded_emb_inter))
     # summary_dict = predict(edges, decoder_inter, loaded_emb_inter, drug_cnt, relation2id, id2relation)
-    summary_dict = predict(edges, decoder_inter, emb_inter, drug_cnt, relation2id, id2relation)
+    summary_dict = predict(edges_list, decoder_inter, emb_inter, drug_cnt, relation2id, id2relation, id2drug, drug2id)
     # print(decoder_inter)
     # print(len(summary_dict), edges.shape)
     print(summary_dict)
