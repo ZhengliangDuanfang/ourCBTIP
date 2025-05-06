@@ -1,0 +1,41 @@
+brotlipy==0.7.0
+certifi==2021.5.30
+cffi @ file:///tmp/build/80754af9/cffi_1625814693446/work
+chardet @ file:///tmp/build/80754af9/chardet_1607706768982/work
+cryptography @ file:///tmp/build/80754af9/cryptography_1616769182610/work
+cycler==0.10.0
+decorator @ file:///tmp/build/80754af9/decorator_1621259047763/work
+dgl==0.7.0
+dgllife==0.2.6
+dill==0.3.4
+idna @ file:///home/linux1/recipes/ci/idna_1610986105248/work
+joblib @ file:///tmp/build/80754af9/joblib_1613502643832/work
+kiwisolver==1.3.1
+littleutils==0.2.2
+lmdb==1.2.1
+matplotlib==3.4.2
+mkl-fft==1.3.0
+mkl-random @ file:///tmp/build/80754af9/mkl_random_1618853974840/work
+mkl-service==2.3.0
+networkx==2.2
+numpy @ file:///tmp/build/80754af9/numpy_and_numpy_base_1620831194891/work
+ogb==1.3.1
+olefile==0.46
+outdated==0.2.1
+pandas==1.2.5
+Pillow @ file:///tmp/build/80754af9/pillow_1625655818400/work
+pycparser @ file:///tmp/build/80754af9/pycparser_1594388511720/work
+pyOpenSSL @ file:///tmp/build/80754af9/pyopenssl_1608057966937/work
+pyparsing==2.4.7
+PySocks @ file:///tmp/build/80754af9/pysocks_1594394576006/work
+python-dateutil @ file:///home/ktietz/src/ci/python-dateutil_1611928101742/work
+pytz @ file:///tmp/build/80754af9/pytz_1612215392582/work
+requests @ file:///tmp/build/80754af9/requests_1608241421344/work
+scikit-learn @ file:///tmp/build/80754af9/scikit-learn_1621370326158/work
+scipy @ file:///tmp/build/80754af9/scipy_1618852618548/work
+six @ file:///tmp/build/80754af9/six_1623709665295/work
+threadpoolctl @ file:///tmp/tmp79xdzxkt/threadpoolctl-2.1.0-py3-none-any.whl
+torch==1.8.2
+tqdm @ file:///tmp/build/80754af9/tqdm_1625563689033/work
+typing-extensions @ file:///tmp/build/80754af9/typing_extensions_1624965014186/work
+urllib3 @ file:///tmp/build/80754af9/urllib3_1625084269274/work

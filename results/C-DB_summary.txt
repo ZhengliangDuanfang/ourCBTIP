@@ -1,0 +1,11 @@
+Train dataset: C-DB
+Train start time: 2025-02-14_15:53:27
+Train end time: 2025-02-14_17:16:12
+Epoch Number: 383
+Delta: 0.0
+Constant: 0.0
+Average F1-score: 0.9511519232588933
+Average AUROC: 0.9377934237109758
+Average AUPRC: 0.9011386074026446
+Average Precision score: 0.9007383155033681
+

@@ -1,0 +1,352 @@
+Train dataset: CB-DB
+Train start time: 2025-01-24_22:52:46
+Train end time: 2025-01-24_22:53:31
+Epoch Number: 1
+Delta: 0.0
+Constant: 0.0
+Average F1-score: 0.5652733581691233
+Average AUROC: 0.5811852641387445
+Average AUPRC: 0.6598040652094634
+Average Precision score: 0.5623025575895608
+
+Train dataset: CB-DB
+Train start time: 2025-01-24_22:53:36
+Train end time: 2025-01-25_00:51:23
+Epoch Number: 354
+Delta: 0.0
+Constant: 0.0
+Average F1-score: 0.9704341366411617
+Average AUROC: 0.9575986608387768
+Average AUPRC: 0.92628126682849
+Average Precision score: 0.9259839548714265
+
+Train dataset: CB-DB
+Train start time: 2025-01-25_00:51:28
+Train end time: 2025-01-25_03:40:32
+Epoch Number: 500
+Delta: 1.0
+Constant: 0.5
+Average F1-score: 0.968535508576076
+Average AUROC: 0.9579747627125115
+Average AUPRC: 0.9278735666695399
+Average Precision score: 0.9273792013562056
+
+Train dataset: CB-DB
+Train start time: 2025-01-25_03:40:37
+Train end time: 2025-01-25_06:32:35
+Epoch Number: 500
+Delta: 1.0
+Constant: 0.1
+Average F1-score: 0.9724346936908889
+Average AUROC: 0.9615712554662736
+Average AUPRC: 0.9332978968542461
+Average Precision score: 0.9330841712672842
+
+Train dataset: CB-DB
+Train start time: 2025-01-25_06:32:40
+Train end time: 2025-01-25_08:48:41
+Epoch Number: 409
+Delta: 1.0
+Constant: 0.0
+Average F1-score: 0.9700435541454916
+Average AUROC: 0.9589429010979621
+Average AUPRC: 0.9294019757879631
+Average Precision score: 0.9290716129161414
+
+Train dataset: CB-DB
+Train start time: 2025-01-25_08:48:46
+Train end time: 2025-01-25_11:21:29
+Epoch Number: 454
+Delta: 0.01
+Constant: 0.5
+Average F1-score: 0.9722839215782576
+Average AUROC: 0.9612905594127558
+Average AUPRC: 0.9333855913246982
+Average Precision score: 0.9331673819190959
+
+Train dataset: CB-DB
+Train start time: 2025-01-25_11:21:34
+Train end time: 2025-01-25_13:18:04
+Epoch Number: 341
+Delta: 0.01
+Constant: 0.1
+Average F1-score: 0.9669183357832125
+Average AUROC: 0.9553466348893073
+Average AUPRC: 0.9244654278666737
+Average Precision score: 0.9240754650374905
+
+Train dataset: CB-DB
+Train start time: 2025-01-25_13:18:09
+Train end time: 2025-01-25_15:57:20
+Epoch Number: 473
+Delta: 0.01
+Constant: 0.0
+Average F1-score: 0.9707619797269486
+Average AUROC: 0.9584301812783125
+Average AUPRC: 0.9276773157252713
+Average Precision score: 0.9270164200461898
+
+Train dataset: CB-DB
+Train start time: 2025-01-25_15:57:25
+Train end time: 2025-01-25_17:51:29
+Epoch Number: 338
+Delta: 0.0001
+Constant: 0.5
+Average F1-score: 0.9693573954594545
+Average AUROC: 0.9583607682348748
+Average AUPRC: 0.9280153671351346
+Average Precision score: 0.9277882123642529
+
+Train dataset: CB-DB
+Train start time: 2025-01-25_17:51:34
+Train end time: 2025-01-25_20:24:53
+Epoch Number: 458
+Delta: 0.0001
+Constant: 0.1
+Average F1-score: 0.9712174567623263
+Average AUROC: 0.9587796652652266
+Average AUPRC: 0.9279823738831492
+Average Precision score: 0.9277667826757103
+
+Train dataset: CB-DB
+Train start time: 2025-01-25_20:24:58
+Train end time: 2025-01-25_22:28:24
+Epoch Number: 373
+Delta: 0.0001
+Constant: 0.0
+Average F1-score: 0.9700496503083501
+Average AUROC: 0.9584677438946465
+Average AUPRC: 0.9280264563291843
+Average Precision score: 0.9279114847827798
+
+Train dataset: CB-DB
+Train start time: 2025-01-25_23:33:42
+Train end time: 2025-01-26_02:45:43
+Epoch Number: 449
+Delta: 0.0
+Constant: 0.0
+Average F1-score: 0.9720007724706486
+Average AUROC: 0.9602851401607946
+Average AUPRC: 0.9316584562712726
+Average Precision score: 0.9315028543932676
+
+Train dataset: CB-DB
+Train start time: 2025-01-25_23:32:47
+Train end time: 2025-01-26_03:04:06
+Epoch Number: 489
+Delta: 0.01
+Constant: 0.5
+Average F1-score: 0.9721543498814257
+Average AUROC: 0.9611022261999111
+Average AUPRC: 0.9331220409348466
+Average Precision score: 0.9328635942563789
+
+Train dataset: CB-DB
+Train start time: 2025-01-26_02:45:48
+Train end time: 2025-01-26_05:51:20
+Epoch Number: 435
+Delta: 0.0
+Constant: 0.0
+Average F1-score: 0.9736574182337695
+Average AUROC: 0.9612660596332766
+Average AUPRC: 0.9335410741916241
+Average Precision score: 0.9332861942632995
+
+Train dataset: CB-DB
+Train start time: 2025-01-26_03:04:12
+Train end time: 2025-01-26_05:58:06
+Epoch Number: 402
+Delta: 0.01
+Constant: 0.5
+Average F1-score: 0.9707104958589523
+Average AUROC: 0.9594087373369866
+Average AUPRC: 0.9303399524041785
+Average Precision score: 0.9300392242229608
+
+Train dataset: CB-DB
+Train start time: 2025-01-26_05:51:26
+Train end time: 2025-01-26_08:43:11
+Epoch Number: 395
+Delta: 0.0
+Constant: 0.0
+Average F1-score: 0.9712223195865524
+Average AUROC: 0.9591836568010271
+Average AUPRC: 0.9294120344175897
+Average Precision score: 0.9292029513596644
+
+Train dataset: CB-DB
+Train start time: 2025-01-26_05:58:11
+Train end time: 2025-01-26_09:23:49
+Epoch Number: 500
+Delta: 0.01
+Constant: 0.5
+Average F1-score: 0.970617603847773
+Average AUROC: 0.9603189064450396
+Average AUPRC: 0.9312898168665072
+Average Precision score: 0.9310151727285916
+
+Train dataset: CB-DB
+Train start time: 2025-01-26_15:36:53
+Train end time: 2025-01-26_18:26:24
+Epoch Number: 388
+Delta: 1.0
+Constant: 0.5
+Average F1-score: 0.9700329400219273
+Average AUROC: 0.9589348707595324
+Average AUPRC: 0.9283296115985693
+Average Precision score: 0.9278872788887842
+
+Train dataset: CB-DB
+Train start time: 2025-01-26_15:37:16
+Train end time: 2025-01-26_19:10:44
+Epoch Number: 500
+Delta: 1.0
+Constant: 0.5
+Average F1-score: 0.9696160770088987
+Average AUROC: 0.9592822867603182
+Average AUPRC: 0.9301741567620598
+Average Precision score: 0.929736120294394
+
+Train dataset: CB-DB
+Train start time: 2025-01-26_18:26:31
+Train end time: 2025-01-26_22:03:12
+Epoch Number: 500
+Delta: 1.0
+Constant: 0.5
+Average F1-score: 0.9710756233642703
+Average AUROC: 0.9600716551578752
+Average AUPRC: 0.9306482920398885
+Average Precision score: 0.930303038602193
+
+Train dataset: CB-DB
+Train start time: 2025-01-26_19:10:50
+Train end time: 2025-01-26_22:35:20
+Epoch Number: 500
+Delta: 1.0
+Constant: 0.5
+Average F1-score: 0.9706627019007029
+Average AUROC: 0.9527365456175056
+Average AUPRC: 0.9125668742888792
+Average Precision score: 0.9113590160464624
+
+Train dataset: CB-DB
+Train start time: 2025-01-26_22:47:00
+Train end time: 2025-01-27_01:59:17
+Epoch Number: 453
+Delta: 1.0
+Constant: 0.5
+Average F1-score: 0.9710756298465298
+Average AUROC: 0.9598969440327201
+Average AUPRC: 0.9313103249972366
+Average Precision score: 0.9310312073725039
+
+Train dataset: CB-DB
+Train start time: 2025-01-26_22:47:17
+Train end time: 2025-01-27_02:37:44
+Epoch Number: 532
+Delta: 1.0
+Constant: 0.5
+Average F1-score: 0.9719306321354348
+Average AUROC: 0.9592891260308963
+Average AUPRC: 0.928532351051574
+Average Precision score: 0.928158359319478
+
+Train dataset: CB-DB
+Train start time: 2025-01-27_01:59:23
+Train end time: 2025-01-27_05:14:43
+Epoch Number: 458
+Delta: 1.0
+Constant: 0.5
+Average F1-score: 0.9723332216730493
+Average AUROC: 0.9592370900541818
+Average AUPRC: 0.9287777194117681
+Average Precision score: 0.9284507439470657
+
+Train dataset: CB-DB
+Train start time: 2025-01-27_02:37:49
+Train end time: 2025-01-27_05:16:15
+Epoch Number: 361
+Delta: 1.0
+Constant: 0.5
+Average F1-score: 0.9698511930915394
+Average AUROC: 0.9579069987687658
+Average AUPRC: 0.9273677072162497
+Average Precision score: 0.9269493435589234
+
+Train dataset: CB-DB
+Train start time: 2025-02-05_22:10:46
+Train end time: 2025-02-05_22:11:51
+Epoch Number: 2
+Delta: 1.0
+Constant: 0.5
+Average F1-score: 0.5577210941101363
+Average AUROC: 0.6041503667866298
+Average AUPRC: 0.6293070665712283
+Average Precision score: 0.591072724664494
+
+Train dataset: CB-DB
+Train start time: 2025-02-05_22:15:07
+Train end time: 2025-02-05_22:15:48
+Epoch Number: 1
+Delta: 1.0
+Constant: 0.5
+Average F1-score: 0.4198327625557211
+Average AUROC: 0.5104016197999792
+Average AUPRC: 0.5722457785152446
+Average Precision score: 0.5196922615252298
+
+Train dataset: CB-DB
+Train start time: 2025-02-05_22:18:09
+Train end time: 2025-02-05_22:18:49
+Epoch Number: 1
+Delta: 1.0
+Constant: 0.5
+Average F1-score: 0.5567638493780183
+Average AUROC: 0.5832283262189168
+Average AUPRC: 0.647066494650762
+Average Precision score: 0.566782392182695
+
+Train dataset: CB-DB
+Train start time: 2025-02-06_15:37:48
+Train end time: 2025-02-06_15:39:17
+Epoch Number: 3
+Delta: 1.0
+Constant: 0.5
+Average F1-score: 0.6383419359168488
+Average AUROC: 0.6371124096834893
+Average AUPRC: 0.6796128984760232
+Average Precision score: 0.6050446771880598
+
+Train dataset: CB-DB
+Train start time: 2025-02-06_23:23:33
+Train end time: 2025-02-06_23:24:17
+Epoch Number: 1
+Delta: 1.0
+Constant: 0.5
+Average F1-score: 0.4877774314051312
+Average AUROC: 0.5641756964887884
+Average AUPRC: 0.621332605156199
+Average Precision score: 0.560559978767839
+
+Train dataset: CB-DB
+Train start time: 2025-02-06_23:37:43
+Train end time: 2025-02-07_02:28:30
+Epoch Number: 489
+Delta: 0.0
+Constant: 0.0
+Average F1-score: 0.9732871419289578
+Average AUROC: 0.961554897539444
+Average AUPRC: 0.9335221512499801
+Average Precision score: 0.9333441087051276
+
+Train dataset: CB-DB
+Train start time: 2025-02-07_22:35:35
+Train end time: 2025-02-08_01:02:45
+Epoch Number: 435
+Delta: 0.0
+Constant: 0.0
+Average F1-score: 0.9719045949392147
+Average AUROC: 0.9608497148048235
+Average AUPRC: 0.9327405892282643
+Average Precision score: 0.9324240516906198
+

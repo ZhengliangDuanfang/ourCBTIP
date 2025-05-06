@@ -99,6 +99,7 @@ def get_drug():
 @siwa.doc()
 def get_drugs():
     drugs = Drug.query.all()
+    print(len(drugs))
     drug_list = [
         {
             "id": drug.id,
