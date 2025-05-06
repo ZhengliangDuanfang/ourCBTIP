@@ -60,15 +60,30 @@
       </el-form>
     </el-card>
 
-    <el-card class="box-card result-card" v-if="ddiResult !== null">
+    <el-card class="box-card result-card" v-if="ddiResult !== null && ddiResult.length > 0">
        <template #header>
         <div class="card-header">
           <span>预测结果</span>
         </div>
       </template>
       <div>
-        <!-- 这里简单地显示后端返回的原始数据，你可以根据实际返回的 ddi 数据结构来美化显示 -->
-        <pre>{{ JSON.stringify(ddiResult, null, 2) }}</pre>
+        <!-- 使用无序列表展示 DDI 结果 -->
+        <ul>
+          <li v-for="(interaction, index) in ddiResult" :key="index">
+            {{ interaction }}
+          </li>
+        </ul>
+      </div>
+    </el-card>
+    <!-- 添加一个卡片用于显示没有检测到互作用的情况 -->
+    <el-card class="box-card result-card" v-else-if="ddiResult !== null && ddiResult.length === 0">
+       <template #header>
+        <div class="card-header">
+          <span>预测结果</span>
+        </div>
+      </template>
+      <div>
+        <p>未检测到这两个药物之间已知的相互作用。</p>
       </div>
     </el-card>
   </div>
@@ -86,7 +101,7 @@ const formState = reactive({ // 表单状态
   drug1: '',
   drug2: ''
 });
-const ddiResult = ref(null); // DDI 结果
+const ddiResult = ref(null); // DDI 结果，预期是一个字符串数组
 
 // 获取药物列表的函数
 const getDrugList = async () => {
@@ -134,14 +149,22 @@ const handleQueryDDI = async () => {
   ddiResult.value = null; // 清空上一次结果
   try {
     const res = await fetchDDI(formState.drug1, formState.drug2);
-     // 假设后端成功返回的数据结构是 { code: 200, data: {...} }
+     // 假设后端成功返回的数据结构是 { code: 200, data: [...] }，其中 data 是字符串列表
      if (res && res.code === 200) {
-        ddiResult.value = res.data; // 显示结果
+        // 确保 res.data 是一个数组
+        ddiResult.value = Array.isArray(res.data) ? res.data : [];
         notify('success', '查询成功');
+        if (ddiResult.value.length === 0) {
+           console.log("查询成功，但未发现相互作用记录。");
+           // 可选：如果需要，可以为"未发现记录"添加特定的 notify
+           // notify('info', '未检测到相互作用');
+        }
      } else {
+       ddiResult.value = null; // 查询失败时清空结果
        notify('error', res.message || '查询 DDI 失败');
      }
   } catch (error) {
+    ddiResult.value = null; // 异常时清空结果
     console.error("查询 DDI 失败:", error);
      // notify 已在 axios 拦截器中调用
   } finally {
@@ -185,5 +208,17 @@ pre {
   white-space: -pre-wrap;      /* Opera 4-6 */
   white-space: -o-pre-wrap;    /* Opera 7 */
   word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
+
+/* 为列表项添加一些样式 */
+.result-card ul {
+  padding-left: 20px; /* 添加内边距 */
+  margin: 0; /* 移除默认外边距 */
+}
+
+.result-card li {
+  margin-bottom: 10px; /* 增加列表项之间的间距 */
+  line-height: 1.6; /* 增加行高，提高可读性 */
+  text-align: left; /* 确保文本靠左对齐 */
 }
 </style>

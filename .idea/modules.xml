@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/CBTIPBackend.iml" filepath="$PROJECT_DIR$/.idea/CBTIPBackend.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ourCBTIP.iml" filepath="$PROJECT_DIR$/.idea/ourCBTIP.iml" />
     </modules>
   </component>
 </project>
