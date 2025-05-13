@@ -3,6 +3,7 @@ import os
 import time
 import json
 import pandas as pd
+import numpy as np
 import torch
 import numpy as np
 import dgl
@@ -152,6 +153,8 @@ if __name__ == '__main__':
     if not os.path.isdir(params.macro_mol_db_path):
         print("macro molcule db_path not exist")
         generate_macro_mol_graph_datasets(params)
+
+    print("Train")
 
     # load intra-view graph dataset
     # 调用utils/intra_graph_dataset.py中的方法加载小分子和蛋白质的内部图数据集

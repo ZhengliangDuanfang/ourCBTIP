@@ -1,8 +1,8 @@
 import torch.nn as nn
 
 
-from model.intra_encoder import AttentiveFPGNN
-from model.intra_readout import AttentiveFPReadout
+from ..intra_encoder import AttentiveFPGNN
+from ..intra_readout import AttentiveFPReadout
 
 
 class Intra_AttentiveFP(nn.Module):

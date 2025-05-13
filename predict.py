@@ -1,8 +1,8 @@
-from model import GNN_GNN_GNN
-from model import MultiInnerProductDecoder
-from utils.arg_parser import parser
-from utils.intra_graph_dataset import IntraGraphDataset
-from utils.hete_data_utils import build_valid_test_graph
+from .model import GNN_GNN_GNN
+from .model import MultiInnerProductDecoder
+from .utils.arg_parser import parser
+from .utils.intra_graph_dataset import IntraGraphDataset
+from .utils.hete_data_utils import build_valid_test_graph
 import torch
 import json
 import numpy as np
@@ -21,6 +21,16 @@ def load_id_mapping(pathname):
     return id2drug, drug2id, id2target, target2id, id2relation, relation2id
 
 def prediction_setup(params, model_file_name):
+    params.small_mol_db_path = f'./data/{params.dataset}/lmdb_files/smile_graph_db_{params.SMILES_featurizer}'
+    params.macro_mol_db_path = f'./data/{params.dataset}/lmdb_files/prot_graph_db'
+    
+    if not params.disable_cuda and torch.cuda.is_available():
+        params.device = torch.device('cuda:%d' % params.gpu)
+    else:
+        params.device = torch.device('cpu')
+
+    print("Prediction Setup")
+
     # 调用utils/intra_graph_dataset.py中的方法加载小分子和蛋白质的内部图数据集
     small_mol_graphs = IntraGraphDataset(db_path=params.small_mol_db_path, db_name='small_mol')
     macro_mol_graphs = IntraGraphDataset(db_path=params.macro_mol_db_path, db_name='macro_mol')
@@ -94,20 +104,20 @@ def predict(edges_by_name, decoder_inter, emb_inter, drug_cnt, relation2id, id2r
 
 if __name__ == '__main__':
     params = parser.parse_args()
-    if params.dataset != 'CB-DB' or params.split != '811-1':
-        raise NotImplementedError
-    if params.dataset == 'CB-DB':
-        params.small_mol_db_path = f'./data/{params.dataset}/lmdb_files/smile_graph_db_{params.SMILES_featurizer}'
-        params.macro_mol_db_path = f'./data/{params.dataset}/lmdb_files/prot_graph_db'
-        model_file_name = 'CB-DB-test.model'
+    # if params.dataset != 'CB-DB' or params.split != '811-1':
+    #     raise NotImplementedError
+    # if params.dataset == 'CB-DB':
+    #     params.small_mol_db_path = f'./data/{params.dataset}/lmdb_files/smile_graph_db_{params.SMILES_featurizer}'
+    #     params.macro_mol_db_path = f'./data/{params.dataset}/lmdb_files/prot_graph_db'
+    #     model_file_name = 'CB-DB-test.model'
 
-    if not params.disable_cuda and torch.cuda.is_available():
-        params.device = torch.device('cuda:%d' % params.gpu)
-    else:
-        params.device = torch.device('cpu')
+    # if not params.disable_cuda and torch.cuda.is_available():
+    #     params.device = torch.device('cuda:%d' % params.gpu)
+    # else:
+    #     params.device = torch.device('cpu')
 
     decoder_inter, emb_inter, drug_cnt, relation2id, id2relation,\
-    id2drug, drug2id, id2target, target2id = prediction_setup(params, model_file_name)
+    id2drug, drug2id, id2target, target2id = prediction_setup(params, params.model_file_name)
     ##########################
     edges_list = [['DB01495','DB00313','0'],['DB14043','DB00347','0']]    
     # loaded_emb_inter = torch.load('trained_models/emb_inter.pt')

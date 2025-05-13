@@ -2,8 +2,8 @@ import dgl
 import torch
 import torch.nn as nn
 
-from model.inter_encoder.dgl_rgcn import RGCN
-from model.intra_encoder.intra_GNN import Intra_AttentiveFP
+from .inter_encoder.dgl_rgcn import RGCN
+from .intra_encoder.intra_GNN import Intra_AttentiveFP
 
 
 class BioMIP_encoder(nn.Module):
