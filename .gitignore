@@ -1,5 +1,7 @@
 **/__pycache__/
-.idea/
-.vscode/
+**/.idea/
+**/.vscode/
+**/node_modules/
+
 **/prot_graph_db/
 **/smile_graph_db_afp/

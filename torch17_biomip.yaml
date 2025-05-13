@@ -2,15 +2,23 @@ name: torch17_biomip
 channels:
   - rdkit
   - pytorch-lts
-  - http://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
   - dglteam
   - nvidia
-  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
-  - http://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
-  - http://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+  - https://repo.anaconda.com/pkgs/main
+  - conda-forge
   - defaults
+  # - rdkit
+  # - pytorch-lts
+  # - http://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
+  # - dglteam
+  # - nvidia
+  # - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
+  # - http://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
+  # - http://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+  # - defaults
 dependencies:
-  # - _libgcc_mutex=0.1=main # COMMENTED
+  - python=3.7
+  # - _libgcc_mutex=0.1=main
   - _openmp_mutex=4.5=1_gnu
   - blas=1.0=mkl
   - brotlipy=0.7.0=py37h27cfd23_1003
@@ -24,6 +32,7 @@ dependencies:
   - cudatoolkit=11.1.74=h6bb024c_0
   - decorator=5.0.9=pyhd3eb1b0_0
   - dgl=0.6.1=py37_0
+  - dgl-cuda11.0=0.7.0=py37_0
   - dgllife=0.2.6=py37_0
   - ffmpeg=4.2.2=h20bf706_0
   - fontconfig=2.13.1=h6c09931_0
@@ -97,7 +106,6 @@ dependencies:
   - threadpoolctl=2.1.0=pyh5ca1d4c_0
   - tk=8.6.10=hbc83047_0
   - tqdm=4.61.2=pyhd3eb1b0_1
-  - typing_extensions=3.10.0.0=pyh06a4308_0
   - urllib3=1.26.6=pyhd3eb1b0_1
   - wheel=0.36.2=pyhd3eb1b0_0
   - x264=1!157.20191217=h7b6447c_0
@@ -105,17 +113,33 @@ dependencies:
   - zlib=1.2.11=h7b6447c_3
   - zstd=1.4.9=haebb681_0
   - pip:
+    - alembic==1.12.1
+    - click==8.1.8
     - cycler==0.10.0
-    # - dgl-cu111==0.7.0
     - dill==0.3.4
+    - flask==2.2.5
+    - flask-cors==5.0.0
+    - flask-httpauth==4.8.0
+    - flask-migrate==4.1.0
+    - flask-siwadoc==0.2.2
+    - flask-sqlalchemy==3.0.5
+    - greenlet==3.1.1
+    - importlib-metadata==6.7.0
+    - importlib-resources==5.12.0
+    - itsdangerous==2.1.2
+    - jinja2==3.1.6
     - kiwisolver==1.3.1
     - littleutils==0.2.2
     - lmdb==1.2.1
+    - mako==1.2.4
+    - markupsafe==2.1.5
     - matplotlib==3.4.2
     - ogb==1.3.1
     - outdated==0.2.1
+    - pydantic==1.9.0
     - pyparsing==2.4.7
-    # - torch==1.7.1+cu110
-    # - torchaudio==0.7.2
-    # - torchvision==0.8.2+cu110
-# prefix: /home/rzy/anaconda3/envs/torch17_biomip
+    - sqlalchemy==2.0.40
+    - typing-extensions==4.7.1
+    - werkzeug==2.2.3
+    - zipp==3.15.0
+prefix: /home/dell/anaconda3/envs/torch17_biomip
