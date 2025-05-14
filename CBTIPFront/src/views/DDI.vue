@@ -60,21 +60,43 @@
       </el-form>
     </el-card>
 
-    <el-card class="box-card result-card" v-if="ddiResult !== null && ddiResult.length > 0">
-       <template #header>
+    <el-card 
+      class="box-card result-card" 
+      v-if="ddiResult !== null && 
+            (ddiResult.drugbank_descriptions?.length > 0 || ddiResult.predict_descriptions?.length > 0)"
+    >
+      <template #header>
         <div class="card-header">
           <span>预测结果</span>
         </div>
       </template>
-      <div>
-        <!-- 使用无序列表展示 DDI 结果 -->
+      
+      <!-- 已知相互作用 -->
+      <div v-if="ddiResult.drugbank_descriptions?.length > 0">
+        <h3 class="section-title">已知相互作用(DrugBank数据)</h3>
         <ul>
-          <li v-for="(interaction, index) in ddiResult" :key="index">
+          <li v-for="(interaction, index) in ddiResult.drugbank_descriptions" :key="'drugbank-' + index">
+            {{ interaction }}
+          </li>
+        </ul>
+      </div>
+
+      <div v-if="ddiResult.drugbank_descriptions?.length == 0">
+        <h3 class="section-title">已知相互作用(DrugBank数据)</h3>
+        <span>当前drugbank数据集中未收录任何两者间的互作用关系</span>
+      </div>
+
+      <!-- 预测相互作用 -->
+      <div v-if="ddiResult.predict_descriptions?.length > 0" class="predict-section">
+        <h3 class="section-title">预测相互作用(AI模型预测)</h3>
+        <ul>
+          <li v-for="(interaction, index) in ddiResult.predict_descriptions" :key="'predict-' + index">
             {{ interaction }}
           </li>
         </ul>
       </div>
     </el-card>
+
     <!-- 添加一个卡片用于显示没有检测到互作用的情况 -->
     <el-card class="box-card result-card" v-else-if="ddiResult !== null && ddiResult.length === 0">
        <template #header>
@@ -152,7 +174,14 @@ const handleQueryDDI = async () => {
      // 假设后端成功返回的数据结构是 { code: 200, data: [...] }，其中 data 是字符串列表
      if (res && res.code === 200) {
         // 确保 res.data 是一个数组
-        ddiResult.value = Array.isArray(res.data) ? res.data : [];
+        ddiResult.value = {
+          drugbank_descriptions: Array.isArray(res.data.drugbank_descriptions) 
+            ? res.data.drugbank_descriptions 
+            : [],
+          predict_descriptions: Array.isArray(res.data.predict_descriptions) 
+            ? res.data.predict_descriptions 
+            : []
+        };
         notify('success', '查询成功');
         if (ddiResult.value.length === 0) {
            console.log("查询成功，但未发现相互作用记录。");
@@ -220,5 +249,18 @@ pre {
   margin-bottom: 10px; /* 增加列表项之间的间距 */
   line-height: 1.6; /* 增加行高，提高可读性 */
   text-align: left; /* 确保文本靠左对齐 */
+}
+
+.section-title {
+  color: var(--el-color-primary);
+  border-left: 4px solid var(--el-color-primary);
+  padding-left: 10px;
+  margin: 20px 0 15px;
+}
+
+.predict-section {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid var(--el-border-color);
 }
 </style>

@@ -89,10 +89,11 @@ data
     4. 在根目录下执行`flask db upgrade`
     5. 在根目录下执行`flask init`
 4. 后端运行：`flask run`
-5. 前端环境配置：`npm install`
-6. 前端运行：`npm run dev`
-7. 如果运行在远程服务器上，可以设置转发：`ssh -N -L 3000:127.0.0.1:5173 <user name>@<ip address>`，需注意将`<user name>`和`<ip address>`分别替换为运行所用的账号以及服务器所在IP地址。按要求输入密钥后，界面无反应属于正常现象。
-8. 前端URL：http://localhost:3000/
+5. 切换到前端目录：`cd CBTIPFront`
+6. 前端环境配置：`npm install`
+7. 前端运行：`npm run dev`
+8. 如果运行在远程服务器上，可以设置转发：`ssh -N -L 3000:127.0.0.1:5173 <user name>@<ip address>`，需注意将`<user name>`和`<ip address>`分别替换为运行所用的账号以及服务器所在IP地址。按要求输入密钥后，界面无反应属于正常现象。
+9. 前端URL：http://localhost:3000/
 
 ## 测试环境
 

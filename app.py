@@ -1,10 +1,11 @@
 import click
 from flask_migrate import Migrate
 import pickle  # 添加导入 pickle
+import csv
 
 from .myapp import create_app
 from .myapp.plugin import db
-from .myapp.models import User, Drug, Template
+from .myapp.models import User, Drug, Template, Relation
 
 
 app = create_app()
@@ -12,7 +13,7 @@ migrate = Migrate(app, db)
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1')
+    app.run(debug=True, host='127.0.0.1', instance_path='./instance')
 
 
 @app.cli.command()  # 注册为命令，可以传入 name 参数来自定义命令
@@ -72,6 +73,32 @@ def init():
     except FileNotFoundError:
         db.session.rollback()  # 如果文件未找到，也需要回滚用户添加
         click.echo('Error: ./data/templates not found. Database initialization failed.')
+    except Exception as e:
+        db.session.rollback()
+        click.echo('Error initializing database: ' + str(e))
+
+    # 向Relation表中添加DrugBank已经收录的互作用关系
+    try:
+        with open("./data/CB-DB/ddi_pos.csv") as csvfile:
+            csvreader = csv.DictReader(csvfile)
+            i=0
+            for row in csvreader:
+                i=i+1
+                print(i)
+                drug1 = row['drug1']
+                drug2 = row['drug2']
+                type  = int(row['type'])
+                relation = Relation(
+                    drug_id_1=drug1,
+                    drug_id_2=drug2,
+                    relation=type
+                )
+                db.session.add(relation)
+            db.session.commit()
+        click.echo('Successfully initialized relations.')
+    except FileNotFoundError:
+        db.session.rollback()  # 如果文件未找到，也需要回滚用户添加
+        click.echo('Error: ./data/CB-DB/ddi_pos.csv not found. Database initialization failed.')
     except Exception as e:
         db.session.rollback()
         click.echo('Error initializing database: ' + str(e))

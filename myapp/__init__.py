@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from .config import Config
 from .plugin import db, cors, siwa
@@ -27,7 +28,10 @@ def _init_blueprint(app):
 
 
 def create_app():
-    app = Flask(__name__)
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    instance_path = os.path.join(base_dir, "instance")
+    print(instance_path)
+    app = Flask(__name__, instance_path=instance_path, instance_relative_config=True)
     
     # 初始化配置
     _load_config(app)

@@ -1,10 +1,12 @@
 from flask import Blueprint, request, current_app
 
 from ..plugin import db, siwa
-from ..models import User, Drug, Template
+from ..models import User, Drug, Template, Relation
 from ..utils.ApiResult import ApiResult
 from ..utils.CBTIP import ddi_process
 from ..utils.relation_discription import apply_template
+
+import pickle
 
 
 bp = Blueprint('main', __name__)
@@ -70,16 +72,66 @@ def get_ddi():
     drug_1 = Drug.query.filter_by(drug_id=drug_id_1).first()
     drug_2 = Drug.query.filter_by(drug_id=drug_id_2).first()
     if drug_1 and drug_2:
+        drugbank_relations_1 = Relation.query.filter_by(drug_id_1=drug_1.drug_id, drug_id_2=drug_2.drug_id).all()
+        drugbank_relations_2 = Relation.query.filter_by(drug_id_1=drug_2.drug_id, drug_id_2=drug_1.drug_id).all()
+        drugbank_relations = set()
+        for drugbank_relation in drugbank_relations_1:
+            drugbank_relations.add(drugbank_relation.relation)
+        for drugbank_relation in drugbank_relations_2:
+            drugbank_relations.add(drugbank_relation.relation)
+
         relations = ddi_process(drug_id_1, drug_id_2, current_app.config['SETUPS'])
-        descriptions = []
+        predict_relations = []
         for relation in relations:
-            print(relation)
-            # 提取模板
+            if relation not in drugbank_relations:
+                predict_relations.append(relation)
+        drugbank_relations = list(drugbank_relations)
+
+        drugbank_descriptions = []
+        for relation in drugbank_relations:
             template = Template.query.filter_by(relation_id=relation).first()
-            # 应用模板
             description = apply_template(template.template, drug_1.name, drug_2.name)
-            descriptions.append(description)
-        return ApiResult(code=200, message='get ddi successfully', data=descriptions).make_response()
+            drugbank_descriptions.append(description)
+        predict_descriptions = []
+        for relation in predict_relations:
+            template = Template.query.filter_by(relation_id=relation).first()
+            description = apply_template(template.template, drug_1.name, drug_2.name)
+            predict_descriptions.append(description)
+
+
+
+        # with open('./data/ddi', 'rb') as f:
+        #     drug_interactions = pickle.load(f)
+        # drugbank_relations_1 = drug_interactions[drug_1.drug_id+drug_2.drug_id]
+        # drugbank_relations_2 = drug_interactions[drug_2.drug_id+drug_1.drug_id]
+        # drugbank_relations = set()
+        # for drugbank_relation in drugbank_relations_1:
+        #     drugbank_relations.add(drugbank_relation)
+        # for drugbank_relation in drugbank_relations_2:
+        #     drugbank_relations.add(drugbank_relation)
+
+        # relations = ddi_process(drug_id_1, drug_id_2, current_app.config['SETUPS'])
+        # predict_relations = []
+        # for relation in relations:
+        #     if relation not in drugbank_relations:
+        #         predict_relations.append(relation)
+        # drugbank_relations = list(drugbank_relations)
+
+        # drugbank_descriptions = []
+        # for relation in drugbank_relations:
+        #     template = Template.query.filter_by(relation_id=relation).first()
+        #     description = apply_template(template.template, drug_1.name, drug_2.name)
+        #     drugbank_descriptions.append(description)
+        # predict_descriptions = []
+        # for relation in predict_relations:
+        #     template = Template.query.filter_by(relation_id=relation).first()
+        #     description = apply_template(template.template, drug_1.name, drug_2.name)
+        #     predict_descriptions.append(description) 
+        data = {
+            "drugbank_descriptions": drugbank_descriptions,
+            "predict_descriptions": predict_descriptions
+        }
+        return ApiResult(code=200, message='get ddi successfully', data=data).make_response()
     else:
         return ApiResult(code=404, message='Drug not found').make_response()
     

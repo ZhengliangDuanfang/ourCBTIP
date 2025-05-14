@@ -1,8 +1,9 @@
 import os
+from typing import Dict, Tuple
+from collections import defaultdict
 import csv
 import pickle
 import xml.etree.ElementTree as ET
-from lxml import etree
 
 # 读取 ddi_pos.csv的数据，将信息yongyong
 def parse_ddi_pos():
@@ -10,26 +11,17 @@ def parse_ddi_pos():
         with open("./data/ddi", "rb") as f:
             ddi_dict = pickle.load(f)
         return ddi_dict
-    ddi_dict = {}
+    drug_interactions: dict[str, list[int]] = defaultdict(list)
     with open("./data/CB-DB/ddi_pos.csv") as csvfile:
         csvreader = csv.DictReader(csvfile)
         for row in csvreader:
             drug1 = row['drug1']
             drug2 = row['drug2']
             type  = int(row['type'])
-    
-            if drug2 not in ddi_dict:
-                ddi_dict[drug2] = {}
-            if drug1 not in ddi_dict[drug2]:
-                ddi_dict[drug2][drug1] = {}
-                ddi_dict[drug2][drug1]["type"] = type
-
-        # 计算总数
-        total_interactions = sum(len(ddi_dict[drug]) for drug in ddi_dict)
-        print(f'Total interactions: {total_interactions}')
+            drug_interactions[drug1+drug2].append(type)
 
     with open("./data/ddi", "wb") as f:
-        pickle.dump(ddi_dict, f)
+        pickle.dump(drug_interactions, f)
 
 def extract_drug_interactions(xml_file_path):
     ddi_dict = parse_ddi_pos()
@@ -89,31 +81,32 @@ def extract_drug_interactions(xml_file_path):
     
     return ddi_dict
 
+parse_ddi_pos()
 
-# 获取 drug_set
-def get_relations():
-    if os.path.exists("./data/relations"):
-        with open("./data/relations", "rb") as f:
-            ddi_dict = pickle.load(f)
-    else:
-        xml_file_path = '../fulldatabase.xml'
-        ddi_dict = extract_drug_interactions(xml_file_path)
-    return ddi_dict
+# # 获取 drug_set
+# def get_relations():
+#     if os.path.exists("./data/relations"):
+#         with open("./data/relations", "rb") as f:
+#             ddi_dict = pickle.load(f)
+#     else:
+#         xml_file_path = '../fulldatabase.xml'
+#         ddi_dict = extract_drug_interactions(xml_file_path)
+#     return ddi_dict
 
-ddi_dict = get_relations()
+# ddi_dict = get_relations()
 
-relations_set = set()
-for drug1 in ddi_dict:
-    for drug2 in ddi_dict[drug1]:
-        type = ddi_dict[drug1][drug2]["type"]
-        relations_set.add(type)
+# relations_set = set()
+# for drug1 in ddi_dict:
+#     for drug2 in ddi_dict[drug1]:
+#         type = ddi_dict[drug1][drug2]["type"]
+#         relations_set.add(type)
 
-# 得到每个互作用他们的名称，首先对ddi_dict进行分类，得到每类互作用与其有关的名称
-relations_discription = {i : [] for i in relations_set}
-for drug1 in ddi_dict:
-    for drug2 in ddi_dict[drug1]:
-        type = ddi_dict[drug1][drug2]["type"]
-        relations_discription[type].append(ddi_dict[drug1][drug2]["description"])
+# # 得到每个互作用他们的名称，首先对ddi_dict进行分类，得到每类互作用与其有关的名称
+# relations_discription = {i : [] for i in relations_set}
+# for drug1 in ddi_dict:
+#     for drug2 in ddi_dict[drug1]:
+#         type = ddi_dict[drug1][drug2]["type"]
+#         relations_discription[type].append(ddi_dict[drug1][drug2]["description"])
 
-with open("./data/relations_discription", "wb") as f:
-    pickle.dump(relations_discription, f)
+# with open("./data/relations_discription", "wb") as f:
+#     pickle.dump(relations_discription, f)
