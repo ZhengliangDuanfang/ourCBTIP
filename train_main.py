@@ -1,9 +1,12 @@
 import logging
 import os
 import time
-
+import json
 import pandas as pd
+import numpy as np
 import torch
+import numpy as np
+import dgl
 from sklearn import metrics
 from model import build_optimizer
 from model.customized_loss import select_loss_function
@@ -33,7 +36,7 @@ def train(encoder, decoder_intra, decoder_inter, dgi_model,
     opt.zero_grad()
     emb_intra, emb_inter = encoder(mol_graphs,
                                    train_pos_graph)
-    dgi_loss = dgi_model(emb_intra, emb_inter, # question: dgi_model 是干啥的？
+    dgi_loss = dgi_model(emb_intra, emb_inter,
                          train_pos_graph, train_neg_graph)
     emb_intra_prot = emb_intra['target']
     if emb_intra['bio'] is not None:
@@ -55,16 +58,19 @@ def train(encoder, decoder_intra, decoder_inter, dgi_model,
     BCEloss = torch.mean(loss_fn['ERROR'](score_inter, labels)) # 见 model/customized_loss.py 
     BCEloss += params.alpha_loss * torch.mean(loss_fn['ERROR'](score_intra, labels))
     KLloss = torch.mean(loss_fn['DIFF'](score_intra, score_inter))
+    
+    # delta_loss = 1
+    # C = 0.5
     if epo_no < epo_num_with_fp:
-        emb_intra_in1, emb_intra_in2 = emb_intra[intra_pairs['in'][0]], emb_intra[intra_pairs['in'][1]]
-        emb_intra_bt2 = emb_intra[intra_pairs['bt'][1]]
-        diff_loss = loss_fn['FP_INTRA'](emb_intra_in1, emb_intra_in2, emb_intra_bt2) # question: 实现了吗
-                    # + loss_fn['FP_INTRA'](prot_emb_intra_in1, prot_emb_intra_in2, prot_emb_intra_bt2)
+        emb_intra_in1, emb_intra_in2, emb_intra_bt2 = emb_intra[intra_pairs[0]], emb_intra[intra_pairs[1]], emb_intra[intra_pairs[2]]
+        diff_loss = loss_fn['FP_INTRA'](emb_intra_in1, emb_intra_in2, emb_intra_bt2, params.constant) # DONE: 实现loss_fn['FP_INTRA']
+                    # + loss_fn['FP_INTRA'](prot_emb_intra_in1, prot_emb_intra_in2, prot_emb_intra_bt2) # IDEA: 蛋白质表征
         print("back:", BCEloss.item(), KLloss.item(), dgi_loss.item(), diff_loss.item())
-        curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss + params.theta_loss * diff_loss
+        curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss + params.delta_loss * diff_loss
     else:
         print("back:", BCEloss.item(), KLloss.item(), dgi_loss.item())
         curr_loss = BCEloss + params.beta_loss * KLloss + params.gamma_loss * dgi_loss
+
     curr_loss.backward()
 
     opt.step()
@@ -97,77 +103,44 @@ def predicting(model_intra, model_inter,
            torch.cat([pos_score2, neg_score2]).detach().cpu().numpy()
 
 
-def save_id_mapping(dataset, split,
+def save_id_mapping(pathname,
                     id2drug, drug2id,
                     id2target, target2id,
-                    id2relation):
-    np.save(f'data/{dataset}/{split}_id2drug.npy', id2drug)
-    np.save(f'data/{dataset}/{split}_drug2id.npy', drug2id)
-    np.save(f'data/{dataset}/{split}_id2target.npy', id2target)
-    np.save(f'data/{dataset}/{split}_target2id.npy', target2id)
-    np.save(f'data/{dataset}/{split}_id2relation.npy', id2relation)
+                    id2relation, relation2id):
+    np.save(f'{pathname}_id2drug.npy', id2drug)
+    np.save(f'{pathname}_drug2id.npy', drug2id)
+    np.save(f'{pathname}_id2target.npy', id2target)
+    np.save(f'{pathname}_target2id.npy', target2id)
+    np.save(f'{pathname}_id2relation.npy', id2relation)
+    np.save(f'{pathname}_relation2id.npy', relation2id)
 
-
-def load_fp_contrastive_pairs(dataset, split):
-    drug2id = np.load(f'data/{dataset}/{split}_drug2id.npy', allow_pickle=True).item()
-    target2id = np.load(f'data/{dataset}/{split}_target2id.npy', allow_pickle=True).item()
-
-    df = pd.read_csv(f'data/{dataset}/in_pairs.csv', names=['mol1', 'mol2'])
+def load_fp_contrastive_pairs(dataset, drug2id):
+    df = pd.read_csv(f'data/{dataset}/mfp/cluster_pairs.csv', names=['mol1', 'mol2', 'mol3'])
     df['mol1'] = df['mol1'].map(drug2id)
     df['mol2'] = df['mol2'].map(drug2id)
+    df['mol3'] = df['mol3'].map(drug2id)
     df.dropna(inplace=True)
-    # assert df.dropna().shape == df.shape
-    pos_mols1, pos_mols2 = df['mol1'].tolist(), df['mol2'].tolist()
-
-    df = pd.read_csv(f'data/{dataset}/bt_pairs.csv', names=['mol1', 'mol2'])
-    df['mol1'] = df['mol1'].map(drug2id)
-    df['mol2'] = df['mol2'].map(drug2id)
-    df.dropna(inplace=True)
-    neg_mols1, neg_mols2 = df['mol1'].tolist(), df['mol2'].tolist()
-
-    # emb_intra = concat target + bio    emb_inter = small + bio
-    if dataset == 'full':
-        for drug in drug2id.keys():
-            if drug.startswith('DB'):
-                target2id[drug] = drug2id[drug] + (target_cnt - small_cnt)
-
-    prot_df = pd.read_csv(f'data/{dataset}/in_pairs_prot.csv', names=['mol1', 'mol2'])
-    prot_df['mol1'] = prot_df['mol1'].map(target2id)
-    prot_df['mol2'] = prot_df['mol2'].map(target2id)
-    prot_df.dropna(inplace=True)
-    pos_prots1, pos_prots2 = prot_df['mol1'].tolist(), prot_df['mol2'].tolist()
-
-    prot_df = pd.read_csv(f'data/{dataset}/bt_pairs_prot.csv', names=['mol1', 'mol2'])
-    prot_df['mol1'] = prot_df['mol1'].map(target2id)
-    prot_df['mol2'] = prot_df['mol2'].map(target2id)
-    prot_df.dropna(inplace=True)
-    neg_prots1, neg_prots2 = prot_df['mol1'].tolist(), prot_df['mol2'].tolist()
-    return {
-        'in': [pos_mols1, pos_mols2],
-        'bt': [neg_mols1, neg_mols2],
-        'in_prot': [pos_prots1, pos_prots2],
-        'bt_prot': [neg_prots1, neg_prots2]
-    }
-
+    mols1, mols2, mols3 = df['mol1'].tolist(), df['mol2'].tolist(), df['mol3'].tolist()
+    return mols1, mols2, mols3
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     params = parser.parse_args()
     print(params)
 
-    time_str = time.strftime('%m-%d_%H_%M', time.localtime(time.time()))
+    if not os.path.isdir('results'):
+        os.mkdir('results')
+    if not os.path.isdir('trained_models'):
+        os.mkdir('trained_models')
 
-    params.aln_path = '/data/rzy/drugbank_prot/full_drugbank/aln'
-    params.npy_path = '/data/rzy/drugbank_prot/full_drugbank/pconsc4'
+    time_str = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime(time.time()))
 
-    if params.dataset == 'cb-db':
-        params.small_mol_db_path = f'/data/rzy/drugbank_prot/{params.dataset}/smile_graph_db_{params.SMILES_featurizer}'
-        params.macro_mol_db_path = f'/data/rzy/drugbank_prot/{params.dataset}/prot_graph_db'  # _{params.prot_featurizer}
-    elif params.dataset == 'c-db':
-        params.small_mol_db_path = f'/data/rzy/deep/smile_graph_db_{params.SMILES_featurizer}'
-        params.macro_mol_db_path = f'/data/rzy/deep/prot_graph_db'  # _{params.prot_featurizer}
-    else:
-        raise NotImplementedError
+    # IDEA: generate_macro_mol_graph_datasets实现后取消注释
+    # params.aln_path = '/data/rzy/drugbank_prot/full_drugbank/aln'
+    # params.npy_path = '/data/rzy/drugbank_prot/full_drugbank/pconsc4'
+
+    params.small_mol_db_path = f'./data/{params.dataset}/lmdb_files/smile_graph_db_{params.SMILES_featurizer}'
+    params.macro_mol_db_path = f'./data/{params.dataset}/lmdb_files/prot_graph_db'
 
     print('small molecule db_path:', params.small_mol_db_path)
     print('macro molecule db_path:', params.macro_mol_db_path)
@@ -175,9 +148,13 @@ if __name__ == '__main__':
     # if not processed, build intra-view graphs
     # 如果对应路径没有这些数据，调用utils/generate_intra_graph_db.py中的方法生成小分子和蛋白质的内部图数据集
     if not os.path.isdir(params.small_mol_db_path):
+        print("small molcule db_path not exist")
         generate_small_mol_graph_datasets(params)
     if not os.path.isdir(params.macro_mol_db_path):
+        print("macro molcule db_path not exist")
         generate_macro_mol_graph_datasets(params)
+
+    print("Train")
 
     # load intra-view graph dataset
     # 调用utils/intra_graph_dataset.py中的方法加载小分子和蛋白质的内部图数据集
@@ -194,6 +171,14 @@ if __name__ == '__main__':
 
     # load the inter-view graph
     # 调用utils/hete_data_utils.py中的方法加载外层视角的互作用图数据集
+    # pos_adj_dict和neg_adj_dict是多层数组，第一层是三元组，
+    # 三元组的第一个和第三项可能是"drug"或"target"中的一个，
+    # 第二项则是药物互作用的类型；第二层是scipy.sparse.csc_matrix，
+    # 代表了这种三元组构成的图的邻接矩阵
+    # dd_dt_tt_triplets是多层数组，第一层是train/valid/test，第二层是pos/neg，
+    # 第三层是dd/dt/tt，且只有train+pos三种都有，其余仅有dd，最后才是药物ID-药物ID-互作用关系ID三元组的list
+    # triplets中没有第三层，而是合并起来，其余与dd_dt_tt_triplets相同
+    # relation2id除了ddi的类型，还有'dt'和'tt'两种
     pos_adj_dict, neg_adj_dict, \
     triplets, dd_dt_tt_triplets, \
     drug2id, target2id, relation2id, \
@@ -202,6 +187,8 @@ if __name__ == '__main__':
         dataset=params.dataset,
         split=params.split
     )
+    with open('trained_models/numbers.json', 'w') as f:
+        json.dump({'drug_cnt': drug_cnt, 'target_cnt': target_cnt, 'small_cnt': small_cnt}, f, indent=4)
 
     # init pos/neg inter-graph
     # 调用utils/hete_data_utils.py中的方法将小分子-蛋白质的互作用图转换为dgl图
@@ -216,13 +203,15 @@ if __name__ == '__main__':
         relation2id=relation2id
     )
 
-    params.rel2id = train_pos_graph[1]
+    params.rel2id = train_pos_graph[1] # params.rel2id 与 relation2id 一致
     params.num_rels = len(params.rel2id)
-    params.id2rel = {
-        v: train_pos_graph[0].to_canonical_etype(k) for k, v in params.rel2id.items()
-    }
+    id2relation = {v: k for k, v in relation2id.items()}
+    # params.id2rel = { # 没找到这个变量在哪里会用到
+    #     v: train_pos_graph[0].to_canonical_etype(k) for k, v in params.rel2id.items()
+    # }
     train_pos_graph, train_neg_graph = train_pos_graph[0], train_neg_graph[0]
     # 此时这两个graph都是dgl.heterograph了
+    dgl.save_graphs(f'trained_models/{params.dataset}_{params.split}_graph.dgl', train_pos_graph)
 
     # add edges in valid set, whose 'mask' = 1
 
@@ -232,6 +221,7 @@ if __name__ == '__main__':
         train_neg_graph = train_neg_graph.to(params.device)
     else:
         params.device = torch.device('cpu')
+    print(f"Training device is {torch.cuda.current_device()}")
 
     params.intra_enc1 = 'afp'
     params.intra_enc2 = 'afp'  # 'rnn'
@@ -253,10 +243,11 @@ if __name__ == '__main__':
         mol_graphs['bio'] = [macro_mol_graphs[id2drug[i]][2] for i in
                              range(small_cnt, drug_cnt)]  # d_id = small_cnt+idx
 
-    model_file_name = f'{time_str}model_{params.dataset}{params.split}.model' \
+    model_file_name = f'{time_str}_model_{params.dataset}{params.split}.model' \
         if params.model_filename is None else params.model_filename
-    result_file_name = f'{time_str}result_{params.dataset}{params.split}.csv'
+    result_file_name = f'{time_str}_result_{params.dataset}_{params.split}'
 
+    np.save(f'trained_models/triplets_test_pos.npy', triplets['test']['pos'])
     # model/model_config.py 导入模型
     encoder, decoder_intra, decoder_inter, ff_contra_net = initialize_BioMIP(params)
     # 从 utils/hete_data_utils.py 中导入测试图数据
@@ -293,15 +284,20 @@ if __name__ == '__main__':
         ).to(params.device)
         cnt_trival = 0
         # load_fp_contrastive_pairs函数的实现见本文件上方
-        intra_pairs = load_fp_contrastive_pairs(params.dataset, params.split)
+        intra_pairs = load_fp_contrastive_pairs(params.dataset, drug2id)
+        # encoder.to(params.device) # IDEA: 解决内存限制问题
+        decoder_intra.to(params.device)
+        decoder_inter.to(params.device)
+        ff_contra_net.to(params.device)
+        print("Train Begin")
         for epoch in range(1, params.max_epoch + 1):
-            emb_intra, emb_inter = train(encoder, decoder_intra, decoder_inter, dgi_model,
+            emb_intra, emb_inter = train(encoder, decoder_intra, decoder_inter, ff_contra_net, # DONE: 此处dgi_model应改为ff_contra_net
                                          opt, loss_fn,
                                          mol_graphs,
                                          train_pos_graph, train_neg_graph,
-                                         f'09_loss_{result_file_name}',
+                                         f'{result_file_name}_loss.csv',
                                          epoch,
-                                         intra_pairs,
+                                         intra_pairs, # DONE: 实现 diff_loss
                                          epo_num_with_fp=20)
             print('predicting for valid data')
 
@@ -328,10 +324,10 @@ if __name__ == '__main__':
                                                            metrics.average_precision_score(test_G, test_P2), \
                                                            calc_aupr(test_G, test_P2), \
                                                            metrics.f1_score(test_G, eval_threshold(test_G, test_P2)[1])
-                if not os.path.exists(f'results/{result_file_name}'):
-                    with open(f'results/{result_file_name}', 'w') as f:
+                if not os.path.exists(f'results/{result_file_name}.csv'):
+                    with open(f'results/{result_file_name}.csv', 'w') as f:
                         f.write('epoch,auroc,auprc,ap,f1\n')
-                with open(f'results/{result_file_name}', 'a+') as f:
+                with open(f'results/{result_file_name}.csv', 'a+') as f:
                     f.write(f'{epoch},{test_auroc},{test_auprc},{test_ap},{test_f1}\n')
             else:
                 if epoch > params.min_epoch:
@@ -340,10 +336,12 @@ if __name__ == '__main__':
                     print('Stop training due to more than 20 epochs with no improvement')
                     break
     
-    encoder.load_state_dict(torch.load(f'trained_models/encoder_{model_file_name}'))
-    decoder_inter.load_state_dict(torch.load(f'trained_models/interdec_{model_file_name}'))
+    # 保存训练结果
+    torch.save(encoder.state_dict(), f'trained_models/encoder_{model_file_name}')
+    torch.save(decoder_inter.state_dict(), f'trained_models/interdec_{model_file_name}')
+    torch.save(decoder_intra.state_dict(), f'trained_models/intradec_{model_file_name}')
+    save_id_mapping(f'trained_models/{params.dataset}_{params.split}', id2drug, drug2id, id2target, target2id, id2relation, relation2id)
 
-    decoder_intra.load_state_dict(torch.load(f'trained_models/intradec_{model_file_name}'))
     emb_intra, emb_inter = encoder(mol_graphs, train_pos_graph)
 
     if emb_intra['bio'] is not None:
@@ -360,9 +358,13 @@ if __name__ == '__main__':
                              multi_res=True)
     res_list = []
 
-    print(len(rel2gt_pred.keys()), rel2gt_pred.keys())  # 62
+    # print(len(rel2gt_pred.keys()), rel2gt_pred.keys())  # 62
     total_len, tot_auroc, tot_auprc, tot_ap, tot_f1 = 0, 0.0, 0.0, 0.0, 0.0
+    count = 0 # for debug
     for k, v in rel2gt_pred.items():
+        count += 1 
+        # torch.save(v[0], f'trained_models/test_ref_{count}.pt')
+        # torch.save(v[1], f'trained_models/test_perdict_{count}.pt')
         _len = v[0].shape[0]
         if _len == 0:
             res_list.append([int(k[1]), 0, 0, 0, 0, 0])
@@ -383,7 +385,7 @@ if __name__ == '__main__':
         res_list.append([int(k[1]), _len, test_auroc, test_auprc, test_ap, test_f1])
     pd.DataFrame(res_list).to_csv(f'results/{result_file_name}_multi.csv', index=False,
                                   header=['rel_name', 'test_len', 'auroc', 'auprc', 'ap', 'f1'])
-    with open(f'results/{result_file_name}', 'a+') as f:
+    with open(f'results/{result_file_name}.csv', 'a+') as f:
         f.write(
             f'final,{params.dataset},'
             f'{tot_auroc / total_len},'
@@ -391,5 +393,18 @@ if __name__ == '__main__':
             f'{tot_ap / total_len},'
             f'{tot_f1 / total_len}\n'
         )
-
-# python train_main.py -d deep -sp 415-2 --gpu 2 --beta_loss 0.3 --gamma_loss 0.001 --alpha_loss 1 -lr 0.001 --max_epoch 500
+    
+    # 方便观察与比对结果
+    end_time_str = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime(time.time()))
+    with open(f'results/{params.dataset}_summary.txt', 'a+') as f:
+        f.write(
+            f'Train dataset: {params.dataset}\nTrain start time: {time_str}\n'
+            f'Train end time: {end_time_str}\n'
+            f'Epoch Number: {epoch}\n'
+            f'Delta: {params.delta_loss}\n'
+            f'Constant: {params.constant}\n'
+            f'Average F1-score: {tot_f1 / total_len}\n'
+            f'Average AUROC: {tot_auroc / total_len}\n'
+            f'Average AUPRC: {tot_auprc / total_len}\n'
+            f'Average Precision score: {tot_ap / total_len}\n\n'
+        )

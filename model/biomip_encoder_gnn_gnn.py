@@ -2,8 +2,8 @@ import dgl
 import torch
 import torch.nn as nn
 
-from model.inter_encoder.dgl_rgcn import RGCN
-from model.intra_encoder.intra_GNN import Intra_AttentiveFP
+from .inter_encoder.dgl_rgcn import RGCN
+from .intra_encoder.intra_GNN import Intra_AttentiveFP
 
 
 class BioMIP_encoder(nn.Module):
@@ -33,17 +33,17 @@ class BioMIP_encoder(nn.Module):
     def forward(self, mol_structs, pos_graph): 
         # mol_structs的结构见train_main.py中mol_graphs的初始化
         # pos_graph为DGLHeteroGraph
-        small_bg = dgl.batch(mol_structs['small'])  # to("cuda:x")
+        small_bg = dgl.batch(mol_structs['small'])#.to(self.params.device)
         small_mol_feats = self.small_intra(small_bg, small_bg.ndata['nfeats'].to(torch.float32),
                                            small_bg.edata['efeats'].to(torch.float32))
         target_mol_feats = None
         if 'target' in mol_structs:
-            target_bg = dgl.batch(mol_structs['target'])
+            target_bg = dgl.batch(mol_structs['target'])#.to(self.params.device)
             target_mol_feats = self.macro_intra(target_bg, target_bg.ndata['nfeats'].to(torch.float32),
                                                 target_bg.edata['efeats'].to(torch.float32))
         bio_mol_feats = None
         if 'bio' in mol_structs:
-            bio_bg = dgl.batch(mol_structs['bio'])
+            bio_bg = dgl.batch(mol_structs['bio'])#.to(self.params.device)
             bio_mol_feats = self.macro_intra(bio_bg, bio_bg.ndata['nfeats'].to(torch.float32),
                                              bio_bg.edata['efeats'].to(torch.float32))
         pos_graph.nodes['drug'].data['intra'] = torch.cat([small_mol_feats, bio_mol_feats], 0).to(self.params.device) \

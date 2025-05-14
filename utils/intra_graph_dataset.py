@@ -3,7 +3,7 @@ import struct
 import lmdb
 from torch.utils.data import Dataset
 
-from utils.data_utils import deserialize_small, deserialize_macro
+from .data_utils import deserialize_small, deserialize_macro
 
 
 class IntraGraphDataset(Dataset):

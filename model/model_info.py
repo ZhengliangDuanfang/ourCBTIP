@@ -3,7 +3,7 @@ from argparse import Namespace
 import dgl
 import torch.nn as nn
 
-from model.losses_info import local_global_loss_
+from .losses_info import local_global_loss_
 
 class FF_MI_max(nn.Module):
     def __init__(self, args: Namespace, gamma=.1):
